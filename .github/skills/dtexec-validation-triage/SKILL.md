@@ -36,7 +36,7 @@ The connection manager can't reach SQL Server.
 The SQL query in the OLE DB Source references a column the source table doesn't have.
 
 - **Fix in metadata JSON.** Check the `source.columns` block. Cross-reference against the [`adventureworks-mapping`](../adventureworks-mapping/SKILL.md) skill — never invent column names.
-- **If the column is correct but missing on the live DB**, use `mssql_run_query` to confirm against `sardinha\SQL2025`.
+- **If the column is correct but missing on the live DB**, use `mssql_run_query` to confirm against `.\SQL2025`.
 
 ### `DTS_E_OLEDBDESTINATIONADAPTERSTATIC_INVALIDDATA` / lineage-ID mismatch
 
@@ -53,7 +53,7 @@ Source column is `VARCHAR`, destination is `NVARCHAR` (or vice-versa). The patte
 
 ### `Error: Validation timed out`
 
-Network reachability from the agent host to `sardinha\SQL2025`. Not a code fix.
+Network reachability from the agent host to `.\SQL2025`. Not a code fix.
 
 - **Confirm with `mssql_connect`.** If the MCP can reach the server, the SSIS package's connection string is wrong. If it can't, the environment is broken.
 

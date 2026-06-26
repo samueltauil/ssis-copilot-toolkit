@@ -83,7 +83,7 @@ Primitives surface as VS Code tasks (`.vscode/tasks.json` — Ctrl+Shift+B). Ski
 
 ## Environment assumptions
 
-- **SQL Server**: `sardinha\SQL2025` (SQL Server 2025 Developer Edition) with AdventureWorks2025 attached.
+- **SQL Server**: `.\SQL2025` (SQL Server 2025 Developer Edition) with AdventureWorks2025 attached.
 - **IDE**: either **Visual Studio 2026 (18.4+)** (native SSIS designer; native Copilot Chat with agent-customization parity) or **VS Code** Stable/Insiders with GitHub Copilot Chat. Customization files under `.github/` use only VS Code's documented portable schema (capability aliases — `read`, `edit`, `search`, `execute`, `todo` — in agent frontmatter) so both IDEs honor them.
 - **PowerShell**: 7+ (`pwsh`) preferred; Windows PowerShell 5.1 acceptable for `Microsoft.SqlServer.ManagedDTS.dll` interop.
 - **.NET 8 SDK**: required by [tools/lib/SsisOmHost/Build-SsisOmHost.ps1](tools/lib/SsisOmHost/Build-SsisOmHost.ps1).

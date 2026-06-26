@@ -3,7 +3,7 @@
   DTS:refId="Package"
   DTS:CreationDate="6/26/2026 2:15:20 PM"
   DTS:CreationName="Microsoft.Package"
-  DTS:CreatorComputerName="SARDINHA"
+  DTS:CreatorComputerName="LOCALHOST"
   DTS:CreatorName="REDMOND\tauilsamuel"
   DTS:DTSID="{535C06B9-437E-4CBB-A499-2CF2DA36DDDF}"
   DTS:ExecutableType="Microsoft.Package"
@@ -24,7 +24,7 @@
         <DTS:ConnectionManager
           DTS:ConnectRetryCount="1"
           DTS:ConnectRetryInterval="5"
-          DTS:ConnectionString="Data Source=sardinha\SQL2025;Initial Catalog=CopilotSSIS_Warehouse;Provider=MSOLEDBSQL;Integrated Security=SSPI;Trust Server Certificate=True;Auto Translate=False;" />
+          DTS:ConnectionString="Data Source=.\SQL2025;Initial Catalog=CopilotSSIS_Warehouse;Provider=MSOLEDBSQL;Integrated Security=SSPI;Trust Server Certificate=True;Auto Translate=False;" />
       </DTS:ObjectData>
     </DTS:ConnectionManager>
   </DTS:ConnectionManagers>

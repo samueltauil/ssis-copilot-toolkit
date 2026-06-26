@@ -46,7 +46,7 @@ For every SSIS request:
 ## When you need facts
 
 - **SSIS API or behavior questions** → call the `microsoft-docs/*` tools (Microsoft Learn MCP). Always cite the URL in your reply.
-- **Live SQL Server state** (does this table exist? is SSISDB present? has this dim got rows?) → use `mssql_*` tools against `sardinha\SQL2025`.
+- **Live SQL Server state** (does this table exist? is SSISDB present? has this dim got rows?) → use `mssql_*` tools against `.\SQL2025`.
 - **Repo conventions** → consult [AGENTS.md](../../AGENTS.md) and the relevant `.github/instructions/*.instructions.md` file.
 - **Demo flow / customer story** → consult [github-copilot-ssis-demo-plan.md](../../context/github-copilot-ssis-demo-plan.md).
 

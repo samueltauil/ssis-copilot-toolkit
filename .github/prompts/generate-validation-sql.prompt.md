@@ -16,6 +16,6 @@ Steps:
    - **Type-2 dim**: at most one row per business key has `IsCurrent = 1`; `EffectiveTo IS NULL` ⟺ `IsCurrent = 1`; no overlapping date ranges per business key.
    - **Fact**: row count equals staging row count; no NULL surrogate keys (Lookup failures); aggregate of one measure matches an independent source aggregate.
 3. Add three "spot-check" queries at the top of the file (e.g. `SELECT TOP 10 …`) and the formal assertions below.
-4. Tell the user how to run it: `Invoke-Sqlcmd -ServerInstance "sardinha\SQL2025" -Database "CopilotSSIS_Warehouse" -InputFile templates/sql/validate-<PackageName>.sql`.
+4. Tell the user how to run it: `Invoke-Sqlcmd -ServerInstance ".\SQL2025" -Database "CopilotSSIS_Warehouse" -InputFile templates/sql/validate-<PackageName>.sql`.
 
 Output only SQL files — do not run the queries yourself. The reviewer runs them.

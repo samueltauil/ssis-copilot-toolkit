@@ -87,7 +87,7 @@ namespace SsisOmHost
                 var defaultDb = role == "source" ? "AdventureWorks2025" : "CopilotSSIS_Warehouse";
                 return new ConnectionInfo
                 {
-                    Server   = GetString(block, "server",   defaultValue: @"sardinha\SQL2025"),
+                    Server   = GetString(block, "server",   defaultValue: @".\SQL2025"),
                     Database = GetString(block, "database", defaultValue: defaultDb)
                 };
             }

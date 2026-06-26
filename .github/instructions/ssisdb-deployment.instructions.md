@@ -33,7 +33,7 @@ Then poll `catalog.executions` for `status` (1 created / 2 running / 3 cancelled
 - `Set-StrictMode -Version Latest` and `$ErrorActionPreference = 'Stop'` at the top of every script.
 - Use `Invoke-Sqlcmd` or `System.Data.SqlClient` directly; do not shell out to `sqlcmd.exe` from inside the toolkit.
 - Return objects, not strings — scripts that report results should write PSCustomObjects suitable for `Format-Table` or `Export-Csv`.
-- Every script accepts `-Server` / `-Database` / `-Folder` / `-Project` parameters with sensible defaults pointing at `sardinha\SQL2025` and `SSISDB`.
+- Every script accepts `-Server` / `-Database` / `-Folder` / `-Project` parameters with sensible defaults pointing at `.\SQL2025` and `SSISDB`.
 
 ## What NOT to do
 

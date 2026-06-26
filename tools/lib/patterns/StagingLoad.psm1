@@ -113,14 +113,14 @@ function Resolve-PackageConnection {
     if ($Role -eq 'source' -and $Metadata.ContainsKey('source')) {
         $s = [hashtable]$Metadata['source']
         return [PSCustomObject]@{
-            Server   = $(if ($s.ContainsKey('server')) { $s['server'] } else { 'sardinha\SQL2025' })
+            Server   = $(if ($s.ContainsKey('server')) { $s['server'] } else { '.\SQL2025' })
             Database = $(if ($s.ContainsKey('database')) { $s['database'] } else { 'AdventureWorks2025' })
         }
     }
     if ($Role -eq 'target' -and $Metadata.ContainsKey('target')) {
         $t = [hashtable]$Metadata['target']
         return [PSCustomObject]@{
-            Server   = $(if ($t.ContainsKey('server')) { $t['server'] } else { 'sardinha\SQL2025' })
+            Server   = $(if ($t.ContainsKey('server')) { $t['server'] } else { '.\SQL2025' })
             Database = $(if ($t.ContainsKey('database')) { $t['database'] } else { 'CopilotSSIS_Warehouse' })
         }
     }

@@ -14,18 +14,18 @@
     exists unless -Force is specified.
 
 .PARAMETER Server
-    SQL Server instance. Default 'sardinha\SQL2025'.
+    SQL Server instance. Default '.\SQL2025'.
 
 .PARAMETER Force
     Drop and recreate the demo warehouse database.
 
 .EXAMPLE
     .\install\Install-Toolkit.ps1
-    .\install\Install-Toolkit.ps1 -Server 'sardinha\SQL2025' -Force
+    .\install\Install-Toolkit.ps1 -Server '.\SQL2025' -Force
 #>
 [CmdletBinding()]
 param(
-    [string]$Server = 'sardinha\SQL2025',
+    [string]$Server = '.\SQL2025',
     [switch]$Force
 )
 

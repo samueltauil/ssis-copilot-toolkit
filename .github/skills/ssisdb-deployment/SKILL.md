@@ -19,7 +19,7 @@ description: "Use when deploying an .ispac to SSISDB and executing packages via 
 ## Deploy procedure
 
 ```powershell
-$Server   = 'sardinha\SQL2025'
+$Server   = '.\SQL2025'
 $Folder   = 'Demo'
 $Project  = 'CopilotSSISDemo'
 $Ispac    = 'out\CopilotSSISDemo.ispac'

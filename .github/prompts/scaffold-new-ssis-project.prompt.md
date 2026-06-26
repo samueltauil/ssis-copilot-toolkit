@@ -9,8 +9,8 @@ Create the empty SSIS project skeleton that all subsequent generated packages li
 
 Inputs:
 - Project name (default `CopilotSSISDemo`).
-- Source SQL Server + database (default `sardinha\SQL2025` + `CopilotSSIS_Source` or `AdventureWorks2025`).
-- Warehouse SQL Server + database (default `sardinha\SQL2025` + `CopilotSSIS_Warehouse`).
+- Source SQL Server + database (default `.\SQL2025` + `CopilotSSIS_Source` or `AdventureWorks2025`).
+- Warehouse SQL Server + database (default `.\SQL2025` + `CopilotSSIS_Warehouse`).
 
 Steps:
 1. Confirm `templates/ssis-project/<Name>.dtproj` does **not** already exist. If it does, refuse and tell the user to delete it manually if they really want to start over.

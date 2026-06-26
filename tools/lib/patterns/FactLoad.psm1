@@ -108,7 +108,7 @@ function Resolve-FactConnection {
     if ($Metadata.ContainsKey($Role)) {
         $b = [hashtable]$Metadata[$Role]
         return [PSCustomObject]@{
-            Server   = $(if ($b.ContainsKey('server')) { $b['server'] } else { 'sardinha\SQL2025' })
+            Server   = $(if ($b.ContainsKey('server')) { $b['server'] } else { '.\SQL2025' })
             Database = $(if ($b.ContainsKey('database')) { $b['database'] } else { 'CopilotSSIS_Warehouse' })
         }
     }

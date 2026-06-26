@@ -4,7 +4,7 @@ description: "Use when authoring SSIS packages, metadata JSON, or DDL that reads
 ---
 # AdventureWorks2025 → demo schema mapping
 
-The toolkit's demo uses AdventureWorks2025 (attached on `sardinha\SQL2025`) as the source system. Demo loads land in:
+The toolkit's demo uses AdventureWorks2025 (attached on `.\SQL2025`) as the source system. Demo loads land in:
 
 - `CopilotSSIS_Warehouse.stg.*` — staging
 - `CopilotSSIS_Warehouse.dim.*` — dimensions (mix of Type-1 and Type-2)

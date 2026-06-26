@@ -6,13 +6,13 @@
     "sourceConnection": "Warehouse",
     "targetConnection": "Warehouse",
     "source": {
-        "server": "sardinha\\SQL2025",
+        "server": ".\\SQL2025",
         "database": "CopilotSSIS_Warehouse",
         "schema": "stg",
         "table": "Customer"
     },
     "target": {
-        "server": "sardinha\\SQL2025",
+        "server": ".\\SQL2025",
         "database": "CopilotSSIS_Warehouse",
         "schema": "dim",
         "table": "Customer"
