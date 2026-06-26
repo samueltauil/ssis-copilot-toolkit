@@ -201,6 +201,11 @@ namespace SsisOmHost
             {
                 System.IO.Directory.CreateDirectory(dir);
             }
+            // Strip host-identifying metadata the SSIS runtime auto-populates
+            // (Environment.MachineName, Environment.UserDomainName\UserName) so
+            // generated .dtsx files don't leak the generator's identity into commits.
+            pkg.CreatorComputerName = "LOCALHOST";
+            pkg.CreatorName = "ssis-copilot-toolkit";
             var app = new Application();
             app.SaveToXml(path, pkg, null);
         }

@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="6/26/2026 2:15:20 PM"
+  DTS:CreationDate="6/26/2026 5:09:15 PM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="LOCALHOST"
-  DTS:CreatorName="REDMOND\tauilsamuel"
-  DTS:DTSID="{535C06B9-437E-4CBB-A499-2CF2DA36DDDF}"
+  DTS:CreatorName="ssis-copilot-toolkit"
+  DTS:DTSID="{970AB5A9-3A18-4918-8CD8-7F48F40C091B}"
   DTS:ExecutableType="Microsoft.Package"
   DTS:LastModifiedProductVersion="17.0.1000.7"
   DTS:LocaleID="1033"
   DTS:ObjectName="Dim_CustomerHistory_Type2"
   DTS:ProtectionLevel="0"
-  DTS:VersionGUID="{160BA26B-7725-46CD-ADB5-CC738F3EBE36}">
+  DTS:VersionGUID="{85DCDDC4-8F27-43C2-BC12-68D1271B9324}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Warehouse]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{48D6A556-B1D1-47CF-8ED7-19A9322AD179}"
+      DTS:DTSID="{2270FE02-811E-43CC-84C9-0397F13E0EE9}"
       DTS:ObjectName="Warehouse">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -33,7 +33,7 @@
     <DTS:Executable
       DTS:refId="Package\DFT SCD2"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{0B117BA6-8F61-478E-B149-EE36F25F6E37}"
+      DTS:DTSID="{7EE6DDC3-B9DE-49AB-A3BF-DB56C9FAE2F1}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFT SCD2"

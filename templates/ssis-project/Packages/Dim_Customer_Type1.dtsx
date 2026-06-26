@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="6/26/2026 2:15:14 PM"
+  DTS:CreationDate="6/26/2026 5:09:09 PM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="LOCALHOST"
-  DTS:CreatorName="REDMOND\tauilsamuel"
-  DTS:DTSID="{6B7D3F9B-18A5-4AA9-8988-5C80371C46B0}"
+  DTS:CreatorName="ssis-copilot-toolkit"
+  DTS:DTSID="{63882FE4-3161-412A-A49F-9CC48A564B4D}"
   DTS:ExecutableType="Microsoft.Package"
   DTS:LastModifiedProductVersion="17.0.1000.7"
   DTS:LocaleID="1033"
   DTS:ObjectName="Dim_Customer_Type1"
   DTS:ProtectionLevel="0"
-  DTS:VersionGUID="{4935D322-A4F4-4FFE-A409-82FAAEB17F00}">
+  DTS:VersionGUID="{E48CAF56-7EAD-44F5-BBA6-6D99A212F3F1}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Warehouse]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{91ACA330-9153-463D-A2FA-0B52E6FEDE86}"
+      DTS:DTSID="{32B48777-D4A9-4C23-895D-1CDDB7367E05}"
       DTS:ObjectName="Warehouse">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -33,7 +33,7 @@
     <DTS:Executable
       DTS:refId="Package\DFT Merge Dim"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{261C041A-5FB2-4895-A2E9-78089DC632A1}"
+      DTS:DTSID="{A710DA2E-58EB-4543-90B4-E7E0EF5E24ED}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFT Merge Dim"
