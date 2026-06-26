@@ -12,12 +12,22 @@ Click **"Use this template" → "Create a new repository"** on the GitHub page. 
 
 ### 2. Existing SSIS repo (drop in the overlay)
 
+Use this when you already have an SSIS repository (with your own `.dtproj`, packages, SQL, and folder layout) and just want to add the Copilot toolkit on top of it, without re-cloning or restructuring anything.
+
 ```powershell
 # From the root of your existing SSIS repository, in PowerShell on Windows:
-iex (irm https://raw.githubusercontent.com/<owner>/<repo>/main/install/Add-CopilotSsisToolkit.ps1)
+iex (irm https://raw.githubusercontent.com/samueltauil/ssis-copilot-toolkit/main/install/Add-CopilotSsisToolkit.ps1)
 ```
 
-This downloads [overlay.manifest.psd1](install/overlay.manifest.psd1) plus [Add-CopilotSsisToolkit.ps1](install/Add-CopilotSsisToolkit.ps1) and copies the toolkit's overlay into your tree. Existing files are preserved by default (`-Mode Skip`); `AGENTS.md` and `.gitignore` get a managed block appended. Re-runs are idempotent: the block is found-and-replaced via HTML-comment markers.
+What it does:
+
+1. Downloads [overlay.manifest.psd1](install/overlay.manifest.psd1) (the single source of truth for what ships) and [Add-CopilotSsisToolkit.ps1](install/Add-CopilotSsisToolkit.ps1).
+2. Copies the **overlay** into your tree — the manifest's `Overlay` list: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, and `install/` itself. See [What ships in the overlay](#what-ships-in-the-overlay) below for the complete list.
+3. **Skips** any file that already exists in your repo (default `-Mode Skip`). Pass `-Mode Overwrite` to force-update every overlay file.
+4. Appends a **managed block** to your `AGENTS.md` and `.gitignore`. A managed block is a region fenced by `<!-- BEGIN: ssis-copilot-toolkit ... -->` / `<!-- END: ssis-copilot-toolkit -->` markers in `AGENTS.md` and the same comments with `#` in `.gitignore`. On re-run the script finds those markers and replaces only what's between them, leaving the rest of the file untouched. If your repo has no `AGENTS.md` or `.gitignore` yet, the script creates one with the block in it. These two files are managed this way regardless of `-Mode`.
+5. **Does not copy** the demo content (the manifest's `Demo` list): `templates/sql/`, `templates/metadata/`, `templates/ssis-project/`, `install/Install-Toolkit.ps1`, the demo script, this `README.md`, or the `template-cleanup.yml` workflow. Those are for the AdventureWorks2025 walkthrough that ships with the template, not for your repo.
+
+Re-running the one-liner is safe and idempotent: copied files stay (or get refreshed under `-Mode Overwrite`), managed blocks get replaced in place, and your own files are left alone.
 
 After either path:
 
