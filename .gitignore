@@ -7,6 +7,9 @@ obj/
 *.sln.docstates
 .vs/
 
+# --- Managed-OM host binary (built on demand by Build-SsisOmHost.ps1) ---
+tools/lib/SsisOmHost/SsisOmHost.exe
+
 # --- Build outputs ---
 out/
 publish/
