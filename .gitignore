@@ -1,0 +1,41 @@
+# --- SSIS / Visual Studio build artifacts ---
+bin/
+obj/
+*.suo
+*.user
+*.dtproj.user
+*.sln.docstates
+.vs/
+
+# --- Build outputs ---
+out/
+publish/
+*.ispac
+
+# --- PowerShell ---
+*.ps1xml.cache
+
+# --- Pester ---
+TestResults/
+coverage.xml
+*.cobertura.xml
+
+# --- OS / editor noise ---
+Thumbs.db
+.DS_Store
+*.swp
+*~
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+*.pfx
+*.snk
+
+# --- Local SSISDB exports ---
+*.ispac.local
+local-overrides/
+
+# --- VS Code workspace per-user state ---
+.vscode/*.local.json

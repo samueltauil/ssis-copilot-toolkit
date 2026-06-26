@@ -1,0 +1,27 @@
+{
+    "$schema": "https://json.schemastore.org/dtsx-metadata.json",
+    "pattern": "fact",
+    "packageName": "Fact_SalesOrder",
+    "description": "Resolve dim.Customer surrogate key via Lookup, then load into fact.SalesOrder.",
+    "sourceConnection": "Warehouse",
+    "targetConnection": "Warehouse",
+    "source": {
+        "server": "sardinha\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "stg",
+        "table": "SalesOrderHeader"
+    },
+    "target": {
+        "server": "sardinha\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "fact",
+        "table": "SalesOrder"
+    },
+    "sourceQuery": "SELECT SalesOrderID, OrderDate, CustomerID, SubTotal FROM stg.SalesOrderHeader;",
+    "targetTable": "fact.SalesOrder",
+    "measureColumns": [ "SubTotal" ],
+    "dimensionLookups": [
+        { "dimTable": "dim.Customer", "factColumn": "CustomerKey", "joinOn": "CustomerID" }
+    ],
+    "protectionLevel": "DontSaveSensitive"
+}

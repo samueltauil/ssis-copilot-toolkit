@@ -1,0 +1,145 @@
+name: Template cleanup
+
+# Runs once when a new repository is created from the SSIS Copilot Toolkit
+# template via "Use this template" on GitHub. Strips demo content listed in
+# install/overlay.manifest.psd1 (Demo section), substitutes placeholders, then
+# deletes itself.
+#
+# The `if: github.event.repository.is_template == false` guard ensures this
+# workflow is a no-op in the toolkit's own template source repository — it only
+# runs in repositories generated from the template.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: ${{ github.event.repository.is_template == false }}
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need full history so the cleanup commit can be pushed back.
+          fetch-depth: 0
+          # GITHUB_TOKEN with contents:write permission is sufficient.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect already-cleaned repo
+        id: detect
+        shell: pwsh
+        run: |
+          # If the manifest itself is gone, cleanup has already run.
+          if (-not (Test-Path -LiteralPath 'install/overlay.manifest.psd1')) {
+            "already_cleaned=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Manifest missing — cleanup has already run. Skipping."
+            return
+          }
+          # If this run is the very first push to a freshly-created repo, the
+          # Demo files will still be present. Use templates/ssis-project as a
+          # sentinel — it's the largest demo asset and the most distinctive.
+          if (-not (Test-Path -LiteralPath 'templates/ssis-project')) {
+            "already_cleaned=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Demo content absent — cleanup has already run. Skipping."
+            return
+          }
+          "already_cleaned=false" >> $env:GITHUB_OUTPUT
+
+      - name: Strip demo content
+        if: steps.detect.outputs.already_cleaned == 'false'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $manifest = Import-PowerShellDataFile -LiteralPath 'install/overlay.manifest.psd1'
+          Write-Host "Loaded manifest v$($manifest.Version) — $($manifest.Demo.Count) demo paths to strip."
+
+          foreach ($entry in $manifest.Demo) {
+            $path = $entry.Path
+            if (Test-Path -LiteralPath $path) {
+              Remove-Item -LiteralPath $path -Recurse -Force
+              Write-Host "  Removed: $path"
+            }
+            else {
+              Write-Host "  Skip (not present): $path"
+            }
+          }
+
+      - name: Regenerate AGENTS.md and README
+        if: steps.detect.outputs.already_cleaned == 'false'
+        shell: pwsh
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $repo = $env:GH_REPO              # e.g. "owner/repo"
+          $repoName = $repo.Split('/')[-1]
+
+          # AGENTS.md — replace the toolkit's engineering-internal AGENTS.md with
+          # the same managed block the brownfield installer would append. Source
+          # the block from the manifest so both onboarding paths converge on
+          # identical content.
+          $manifest = Import-PowerShellDataFile -LiteralPath 'install/overlay.manifest.psd1'
+          $agents = $manifest.AgentsMdBlock -replace '<owner>/<repo>', $repo
+          Set-Content -LiteralPath 'AGENTS.md' -Value $agents -NoNewline -Encoding UTF8
+          Write-Host "Regenerated AGENTS.md from manifest (repo=$repo)"
+
+          # README.md — fresh brownfield-style README pointing at this repo.
+          # Built as a string array (not a here-string) because PowerShell
+          # requires the closing "@ at column 1, which would break YAML's
+          # literal-block-scalar indentation under `run: |`.
+          $lines = @(
+            "# $repoName"
+            ''
+            "This repository was created from the [SSIS Copilot Toolkit](https://github.com/$repo) template and has the toolkit overlay pre-installed."
+            ''
+            '## Getting started'
+            ''
+            '1. Build the managed-OM host (one-time):'
+            '   ```powershell'
+            '   .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1'
+            '   ```'
+            '2. Open this repo in **Visual Studio 2026 (18.4+)** or **VS Code** with GitHub Copilot Chat enabled.'
+            '3. From Copilot Chat, invoke `@ssis-author` to author SSIS packages from metadata JSON, or `@ssis-validator` to run the delivery gate against an existing `.dtsx`.'
+            ''
+            'Detailed conventions live in [`.github/copilot-instructions.md`](.github/copilot-instructions.md) and [`AGENTS.md`](AGENTS.md).'
+            ''
+            '> Adding the overlay to an existing SSIS repository instead?'
+            '> ```powershell'
+            "> iex (irm https://raw.githubusercontent.com/$repo/main/install/Add-CopilotSsisToolkit.ps1)"
+            '> ```'
+          )
+          Set-Content -LiteralPath 'README.md' -Value ($lines -join [Environment]::NewLine) -Encoding UTF8
+          Write-Host "Wrote brownfield README.md"
+
+      - name: Self-delete cleanup workflow
+        if: steps.detect.outputs.already_cleaned == 'false'
+        shell: pwsh
+        run: |
+          $self = '.github/workflows/template-cleanup.yml'
+          if (Test-Path -LiteralPath $self) {
+            Remove-Item -LiteralPath $self -Force
+            Write-Host "Removed self: $self"
+          }
+
+      - name: Commit cleanup
+        if: steps.detect.outputs.already_cleaned == 'false'
+        shell: pwsh
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if (git diff --cached --quiet) {
+            Write-Host "Nothing to commit."
+            exit 0
+          }
+          git commit -m "chore: strip SSIS Copilot Toolkit template scaffolding"
+          git push

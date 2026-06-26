@@ -1,0 +1,33 @@
+{
+    "$schema": "https://json.schemastore.org/dtsx-metadata.json",
+    "pattern": "staging",
+    "packageName": "Stg_Customer",
+    "description": "Load Sales.Customer + Person.Person + Person.EmailAddress from AdventureWorks2025 into stg.Customer in CopilotSSIS_Warehouse.",
+    "sourceConnection": "Source",
+    "targetConnection": "Warehouse",
+    "source": {
+        "server": "sardinha\\SQL2025",
+        "database": "AdventureWorks2025",
+        "schema": "Sales",
+        "table": "Customer"
+    },
+    "target": {
+        "server": "sardinha\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "stg",
+        "table": "Customer"
+    },
+    "sourceQuery": "SELECT c.CustomerID, p.FirstName, p.LastName, e.EmailAddress, c.StoreID, c.TerritoryID, CAST(c.AccountNumber AS NVARCHAR(10)) AS AccountNumber FROM Sales.Customer c LEFT JOIN Person.Person p ON p.BusinessEntityID = c.PersonID LEFT JOIN Person.EmailAddress e ON e.BusinessEntityID = c.PersonID;",
+    "targetTable": "stg.Customer",
+    "columns": [
+        { "source": "CustomerID",    "target": "CustomerID",    "dataType": "int" },
+        { "source": "FirstName",     "target": "FirstName",     "dataType": "nvarchar(50)" },
+        { "source": "LastName",      "target": "LastName",      "dataType": "nvarchar(50)" },
+        { "source": "EmailAddress",  "target": "EmailAddress",  "dataType": "nvarchar(50)" },
+        { "source": "StoreID",       "target": "StoreID",       "dataType": "int" },
+        { "source": "TerritoryID",   "target": "TerritoryID",   "dataType": "int" },
+        { "source": "AccountNumber", "target": "AccountNumber", "dataType": "nvarchar(10)" }
+    ],
+    "truncateBeforeLoad": true,
+    "protectionLevel": "DontSaveSensitive"
+}

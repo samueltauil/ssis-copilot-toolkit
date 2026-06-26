@@ -1,0 +1,9 @@
+{
+  "inputs": [],
+  "servers": {
+    "microsoft-docs": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    }
+  }
+}

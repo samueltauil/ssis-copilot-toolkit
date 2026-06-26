@@ -1,0 +1,66 @@
+{
+  // SSIS Copilot Toolkit — workspace defaults.
+  // These settings make the .github/agents, .github/prompts, and .github/skills
+  // contributions discoverable in Copilot Chat without per-user setup.
+
+  "chat.agent.enabled": true,
+  "chat.promptFiles": true,
+  "chat.agent.skills": true,
+  "chat.extensionTools.enabled": true,
+
+  // PowerShell — the toolkit's helpers (tools/*.ps1) target Windows PowerShell 5.1
+  // for SqlServer module compatibility, but pwsh 7+ works for everything except
+  // the rare cases where Invoke-Sqlcmd parameter-binding differs. Default to pwsh.
+  "powershell.powerShellAdditionalExePaths": {},
+  "powershell.codeFormatting.preset": "OTBS",
+  "powershell.codeFormatting.useCorrectCasing": true,
+
+  // MSSQL extension — point default profile at the demo instance.
+  "mssql.connections": [
+    {
+      "server": "sardinha\\SQL2025",
+      "database": "AdventureWorks2025",
+      "authenticationType": "Integrated",
+      "profileName": "AdventureWorks2025 @ sardinha\\SQL2025",
+      "savePassword": false,
+      "groupId": "ROOT",
+      "id": "ad7a0c64-eff4-4846-9388-bef8729f45a9"
+    },
+    {
+      "server": "sardinha\\SQL2025",
+      "database": "SSISDB",
+      "authenticationType": "Integrated",
+      "profileName": "SSISDB @ sardinha\\SQL2025",
+      "savePassword": false,
+      "groupId": "ROOT",
+      "id": "8b509219-9e0a-4d42-a3b2-f1b569620d30"
+    },
+    {
+      "server": "sardinha\\SQL2025",
+      "database": "CopilotSSIS_Warehouse",
+      "authenticationType": "Integrated",
+      "profileName": "CopilotSSIS_Warehouse @ sardinha\\SQL2025",
+      "savePassword": false,
+      "groupId": "ROOT",
+      "id": "e5566c08-ccf4-45b8-a125-c94571648521"
+    }
+  ],
+
+  // Files — make SSIS XML render-friendly without normalizing line endings.
+  "files.associations": {
+    "*.dtsx": "xml",
+    "*.dtproj": "xml",
+    "*.conmgr": "xml",
+    "*.params": "xml"
+  },
+  "files.eol": "\r\n",
+
+  // Search hygiene — never grep into build outputs.
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/out": true,
+    "**/.vs": true,
+    "**/*.ispac": true
+  }
+}

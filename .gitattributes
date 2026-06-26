@@ -1,0 +1,19 @@
+# SSIS artifacts are XML on Windows. Force CRLF so VS-on-Windows checkouts
+# from a Linux/macOS clone stay byte-identical to a fresh Windows clone.
+*.dtsx        text eol=crlf
+*.dtproj      text eol=crlf
+*.conmgr      text eol=crlf
+*.params      text eol=crlf
+*.ispac       binary
+
+# PowerShell modules and scripts: LF (cross-platform pwsh-friendly)
+*.ps1         text eol=lf
+*.psm1        text eol=lf
+*.psd1        text eol=lf
+
+# Markdown, JSON, YAML, SQL: LF
+*.md          text eol=lf
+*.json        text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.sql         text eol=lf

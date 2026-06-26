@@ -1,0 +1,26 @@
+{
+    "$schema": "https://json.schemastore.org/dtsx-metadata.json",
+    "pattern": "type1-dim",
+    "packageName": "Dim_Customer_Type1",
+    "description": "Overwrite-on-match (SCD-1) load from stg.Customer into dim.Customer.",
+    "sourceConnection": "Warehouse",
+    "targetConnection": "Warehouse",
+    "source": {
+        "server": "sardinha\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "stg",
+        "table": "Customer"
+    },
+    "target": {
+        "server": "sardinha\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "dim",
+        "table": "Customer"
+    },
+    "sourceQuery": "SELECT CustomerID, FirstName, LastName, EmailAddress FROM stg.Customer;",
+    "targetTable": "dim.Customer",
+    "businessKey": "CustomerID",
+    "surrogateKey": "CustomerKey",
+    "payloadColumns": [ "FirstName", "LastName", "EmailAddress" ],
+    "protectionLevel": "DontSaveSensitive"
+}

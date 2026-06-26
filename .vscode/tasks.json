@@ -1,0 +1,153 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SSIS: Generate package from metadata",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/New-SsisPackage.ps1",
+        "-Metadata",
+        "${input:metadataPath}"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "SSIS: Test package (dtexec /Validate)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Test-SsisPackage.ps1",
+        "-Package",
+        "${input:packagePath}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "SSIS: Test designer-load (Application.LoadPackage)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Test-SsisDesignerLoad.ps1",
+        "-Package",
+        "${input:packagePath}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "SSIS: Build .ispac (SSISBuild.exe)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Build-SsisIspac.ps1",
+        "-Project",
+        "${input:projectPath}"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "SSIS: Publish .ispac to SSISDB",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Publish-SsisIspac.ps1",
+        "-Ispac",
+        "${input:ispacPath}",
+        "-Folder",
+        "Demo"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "SSIS: Start execution",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Start-SsisExecution.ps1",
+        "-Folder",
+        "Demo",
+        "-Project",
+        "${input:projectName}",
+        "-Package",
+        "${input:packageName}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "SSIS: Install toolkit (one-time bootstrap)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/install/Install-Toolkit.ps1"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "metadataPath",
+      "type": "promptString",
+      "description": "Path to metadata JSON (e.g. templates/metadata/Stg_Customer.metadata.json)"
+    },
+    {
+      "id": "packagePath",
+      "type": "promptString",
+      "description": "Path to .dtsx (e.g. templates/ssis-project/Packages/Stg_Customer.dtsx)"
+    },
+    {
+      "id": "projectPath",
+      "type": "promptString",
+      "description": "Path to .dtproj (e.g. templates/ssis-project/SsisDemo.dtproj)"
+    },
+    {
+      "id": "ispacPath",
+      "type": "promptString",
+      "description": "Path to built .ispac (e.g. templates/ssis-project/bin/Development/SsisDemo.ispac)"
+    },
+    {
+      "id": "projectName",
+      "type": "promptString",
+      "description": "SSISDB project name (e.g. SsisDemo)"
+    },
+    {
+      "id": "packageName",
+      "type": "promptString",
+      "description": "Package name including .dtsx (e.g. Stg_Customer.dtsx)"
+    }
+  ]
+}
