@@ -117,6 +117,8 @@ Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-s
 
 ## The four supported package patterns
 
+`@ssis-author` only emits packages that match one of these four shapes. Anything else: the agent refuses and asks which pattern fits. The pattern recipes (the managed-OM call sequences) live in the [`ssis-package-patterns`](.github/skills/ssis-package-patterns/SKILL.md) skill; each pattern is implemented by a builder module under `tools\lib\patterns\`.
+
 | Pattern | When | Module |
 |---|---|---|
 | Staging load | Source → `stg.*` | `StagingLoad` |
@@ -124,7 +126,40 @@ Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-s
 | Type-2 dimension (SCD-2) | `stg.*` → `dim.*` with current-flag + effective dates | `Type2Dimension` |
 | Fact load | `stg.*` → `fact.*` with surrogate-key lookups | `FactLoad` |
 
-Anything else: `@ssis-author` refuses and asks which pattern fits.
+### Why these four
+
+These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap.
+
+#### Staging load — `Source → stg.*`
+
+**Why it exists.** It decouples extraction from transformation. Source systems are often slow, transient, behind firewalls, or owned by another team. Landing rows in a `stg.*` table inside your warehouse gives you a replayable snapshot you control: downstream dim and fact loads can re-run without re-querying the source, source-schema drift is isolated to one place, and incremental-load watermarks live next to the data. Staging is also the only place where raw column projection and minimal type casting happen — **no business logic, no surrogate-key assignment, no history tracking**.
+
+**Shape.** OLE DB Source → OLE DB Destination. Optional truncate-before-load via an Execute SQL Task. The source `SELECT` may flatten joins (the demo's `Sales.Customer` → `stg.Customer` joins `Person.Person` and `Person.EmailAddress`), but it does not enrich.
+
+#### Type-1 dimension — `stg.* → dim.*`, overwrite on key match
+
+**Why it exists.** Some attributes do not need history. A customer's preferred email or phone number changes? Just overwrite the row — nobody runs analytics that asks "what was this customer's email on March 15th?" Type-1 is the right fit for **master and reference data, and for slowly-changing attributes that do not drive analytical queries**. It is cheaper than Type-2 in storage (no row versioning), simpler in queries (no `IsCurrent` filter, no effective-date range join), and faster to load.
+
+**Shape.** Lookup against `dim` by business key → Conditional Split (matched → update, unmatched → insert) → OLE DB Command for updates plus OLE DB Destination for inserts.
+
+#### Type-2 dimension (SCD-2) — `stg.* → dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo`
+
+**Why it exists.** When you need to answer **"what did this dimension look like at the time the fact happened?"** A sales order from last March must join the customer dim row that was current last March, not today's row — even if the customer's territory, segment, or address has changed since. Type-2 is required for accurate point-in-time reporting, regulatory reporting where history cannot be rewritten, and any attribute drift that drives analytical slicing (territory reassignments, segment migrations, status transitions).
+
+**Shape.** Lookup against `dim` by business key → Conditional Split (new business key / tracked attribute changed / no change) → for changed rows: expire the old row (`IsCurrent = 0`, `EffectiveTo = now`) and insert a new row (`IsCurrent = 1`, `EffectiveFrom = now`, `EffectiveTo = 9999-12-31`). The metadata JSON pins which attributes are *tracked* (trigger a new version) versus *Type-1 overwritten in place*.
+
+#### Fact load — `stg.* → fact.*` with surrogate-key lookups
+
+**Why it exists.** Facts store the measurements; dimensions hold the descriptive context. A fact row holds **surrogate keys** (small INTs sourced from the dim tables), not natural / business keys, for three reasons: (a) surrogate keys are stable across SCD-2 versions, so a fact row pins itself to a specific dim version forever; (b) joins are narrower and faster than joining on composite natural keys; (c) source-system key changes do not ripple into the warehouse. The fact loader's job is mechanical: take staged business keys, look up the right surrogate keys (current row for Type-1 dims, point-in-time row for Type-2 dims), write the fact.
+
+**Shape.** OLE DB Source on `stg` → one Lookup per foreign key (to each `dim`) → Conditional Split for lookup-miss handling (route to error table or insert an inferred-member row) → OLE DB Destination into `fact`.
+
+### What is deliberately not a pattern
+
+- **Source → fact direct.** Skips staging, couples extraction to transformation, no replay. Refuse.
+- **Truncate-and-reload dim or fact.** Destroys history; breaks SCD-2 contract; invalidates any saved fact-to-dim joins. Refuse.
+- **SCD-3 / SCD-6.** Rare in practice; the column-explosion of SCD-3 and the hybrid complexity of SCD-6 are usually better served by a second Type-2 dim or a snapshot fact. Not a pattern today; raise an issue if you have a real case.
+- **Aggregated / snapshot facts.** A specialization of the fact load. Build them on top of the `FactLoad` module rather than as a separate pattern.
 
 ## Read next
 

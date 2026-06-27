@@ -53,7 +53,7 @@ You see all of it in the chat transcript. The agent never edits the `.dtsx` dire
 
 ## Step 3 — Cover the other three patterns
 
-The toolkit supports four patterns. Generate one of each from chat:
+The toolkit supports four patterns: staging, Type-1 dimension, Type-2 dimension, and fact. Each one solves a different problem in a Kimball-style warehouse — [README §The four supported package patterns](README.md#the-four-supported-package-patterns) explains why each exists and what shape it takes. Generate one of each from chat:
 
 ```text
 @ssis-author /generate-dim-type1-package
