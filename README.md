@@ -128,6 +128,7 @@ Anything else: `@ssis-author` refuses and asks which pattern fits.
 
 ## Read next
 
+- [GUIDE.md](GUIDE.md): step-by-step hands-on walkthrough — build the host, provision the demo databases, generate all four package patterns from metadata, validate them with the gate, and drive the toolkit from Copilot Chat. Every command is real and copy-paste runnable.
 - [AGENTS.md](AGENTS.md): repo-wide agent contract.
 - [install/overlay.manifest.psd1](install/overlay.manifest.psd1): single source of truth for the brownfield installer and template-cleanup workflow.
 
