@@ -128,7 +128,7 @@ Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-s
 
 ### Why these four
 
-These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap.
+These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn — staging, SCD Type 1, SCD Type 2, and surrogate-key fact loads — not toolkit-invented shapes. See [Dimensional modeling and load patterns](#references) below for the per-topic links; each pattern subsection cites the most specific reference inline.
 
 #### Staging load — `Source → stg.*`
 
@@ -136,11 +136,15 @@ These are the load patterns of a Kimball-style dimensional warehouse, expressed 
 
 **Shape.** OLE DB Source → OLE DB Destination. Optional truncate-before-load via an Execute SQL Task. The source `SELECT` may flatten joins (the demo's `Sales.Customer` → `stg.Customer` joins `Person.Person` and `Person.EmailAddress`), but it does not enrich.
 
+**Reference.** Microsoft Learn — [Load tables in a dimensional model → *Stage data*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#stage-data): recommends a dedicated `staging` schema to minimize source-system impact and to make the ETL restartable.
+
 #### Type-1 dimension — `stg.* → dim.*`, overwrite on key match
 
 **Why it exists.** Some attributes do not need history. A customer's preferred email or phone number changes? Just overwrite the row — nobody runs analytics that asks "what was this customer's email on March 15th?" Type-1 is the right fit for **master and reference data, and for slowly-changing attributes that do not drive analytical queries**. It is cheaper than Type-2 in storage (no row versioning), simpler in queries (no `IsCurrent` filter, no effective-date range join), and faster to load.
 
 **Shape.** Lookup against `dim` by business key → Conditional Split (matched → update, unmatched → insert) → OLE DB Command for updates plus OLE DB Destination for inserts.
+
+**References.** Microsoft Learn — [Dimension tables → *SCD Type 1*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-1) (overwrite-in-place definition) and [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) (the native SSIS SCD Wizard's *changing attribute* path — same shape this module emits).
 
 #### Type-2 dimension (SCD-2) — `stg.* → dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo`
 
@@ -148,11 +152,15 @@ These are the load patterns of a Kimball-style dimensional warehouse, expressed 
 
 **Shape.** Lookup against `dim` by business key → Conditional Split (new business key / tracked attribute changed / no change) → for changed rows: expire the old row (`IsCurrent = 0`, `EffectiveTo = now`) and insert a new row (`IsCurrent = 1`, `EffectiveFrom = now`, `EffectiveTo = 9999-12-31`). The metadata JSON pins which attributes are *tracked* (trigger a new version) versus *Type-1 overwritten in place*.
 
+**References.** Microsoft Learn — [Dimension tables → *SCD Type 2*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-2) (surrogate key + validity columns + current flag), [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) (the SSIS SCD Wizard's *historical attribute* path), and [Power BI guidance → *Star schema → Type 2 SCD*](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema#type-2-scd).
+
 #### Fact load — `stg.* → fact.*` with surrogate-key lookups
 
 **Why it exists.** Facts store the measurements; dimensions hold the descriptive context. A fact row holds **surrogate keys** (small INTs sourced from the dim tables), not natural / business keys, for three reasons: (a) surrogate keys are stable across SCD-2 versions, so a fact row pins itself to a specific dim version forever; (b) joins are narrower and faster than joining on composite natural keys; (c) source-system key changes do not ripple into the warehouse. The fact loader's job is mechanical: take staged business keys, look up the right surrogate keys (current row for Type-1 dims, point-in-time row for Type-2 dims), write the fact.
 
 **Shape.** OLE DB Source on `stg` → one Lookup per foreign key (to each `dim`) → Conditional Split for lookup-miss handling (route to error table or insert an inferred-member row) → OLE DB Destination into `fact`.
+
+**References.** Microsoft Learn — [Fact tables in a dimensional model](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables) (dimension-key columns as surrogate FKs + measure columns), [Load tables → *Process fact tables*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#process-fact-tables) (per-dimension surrogate-key lookup pattern, point-in-time for SCD-2), and [Dimension tables → *Surrogate key*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#surrogate-key) (why facts join on surrogate keys, not natural keys).
 
 ### What is deliberately not a pattern
 
@@ -190,6 +198,17 @@ The toolkit's design decisions trace back to these Microsoft Learn topics. Use t
 - [`catalog.create_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-create-execution-ssisdb-database) + [`catalog.start_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-start-execution-ssisdb-database) — the canonical execution sequence for the roadmap `Start-SsisExecution.ps1` primitive.
 - [Access control for sensitive data in packages](https://learn.microsoft.com/en-us/sql/integration-services/security/access-control-for-sensitive-data-in-packages) — `ProtectionLevel`. The toolkit pins every package and project to `DontSaveSensitive`.
 - [SSIS on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-migrate-ssis) — the constraint that makes the toolkit Windows-only (no SSISDB on Linux; Project Deployment Model unsupported).
+
+**Dimensional modeling and load patterns**
+
+The four pattern modules under `tools\lib\patterns\` (`StagingLoad`, `Type1Dimension`, `Type2Dimension`, `FactLoad`) implement these Microsoft-documented shapes. Following these gives you portable warehouse loads that any SSIS, Fabric, Synapse, or Power BI practitioner will recognize — not toolkit-specific conventions.
+
+- [Understand star schema and the importance for Power BI](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema) — fact-vs-dimension split, SCD Type 1 and Type 2 definitions, surrogate keys. Cites *The Data Warehouse Toolkit* (Ralph Kimball) as the canonical reference.
+- [Dimensional modeling in Microsoft Fabric data warehouse — overview](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-overview) — star schema, fact and dimension table roles, periodic ETL loading. Also cites the Kimball Toolkit.
+- [Dimensional modeling — dimension tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables) — surrogate keys, natural / business keys, SCD Type 1, SCD Type 2, managing historical change. The conceptual basis for the `Type1Dimension` and `Type2Dimension` modules.
+- [Dimensional modeling — fact tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables) — fact structure (dimension keys as surrogate FKs + measures + audit columns), transaction / periodic snapshot / accumulating snapshot fact types. The conceptual basis for the `FactLoad` module.
+- [Dimensional modeling — load tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables) — end-to-end ETL flow: stage → process dimensions (per SCD type) → process facts (with surrogate-key lookups and inferred dimension members). The conceptual basis for the `StagingLoad` module and for the lookup behavior in `FactLoad`.
+- [Slowly Changing Dimension transformation (SSIS)](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) — the SSIS-native SCD Wizard, with the same Type 1 (*changing attribute*) and Type 2 (*historical attribute*) outputs the `Type1Dimension` and `Type2Dimension` modules emit. The wizard does not support Type 3, which is why we don't either.
 
 **Copilot customization**
 
