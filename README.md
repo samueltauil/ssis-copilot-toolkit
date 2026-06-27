@@ -22,7 +22,7 @@ iex (irm https://raw.githubusercontent.com/samueltauil/ssis-copilot-toolkit/main
 What it does:
 
 1. Downloads [overlay.manifest.psd1](install/overlay.manifest.psd1) (the single source of truth for what ships) and [Add-CopilotSsisToolkit.ps1](install/Add-CopilotSsisToolkit.ps1).
-2. Copies the **overlay** into your tree — the manifest's `Overlay` list: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, and `install/` itself. See [What ships in the overlay](#what-ships-in-the-overlay) below for the complete list.
+2. Copies the **overlay** into your tree. The manifest's `Overlay` list: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, and `install/` itself. See [What ships in the overlay](#what-ships-in-the-overlay) below for the complete list.
 3. **Skips** any file that already exists in your repo (default `-Mode Skip`). Pass `-Mode Overwrite` to force-update every overlay file.
 4. Appends a **managed block** to your `AGENTS.md` and `.gitignore`. A managed block is a region fenced by `<!-- BEGIN: ssis-copilot-toolkit ... -->` / `<!-- END: ssis-copilot-toolkit -->` markers in `AGENTS.md` and the same comments with `#` in `.gitignore`. On re-run the script finds those markers and replaces only what's between them, leaving the rest of the file untouched. If your repo has no `AGENTS.md` or `.gitignore` yet, the script creates one with the block in it. These two files are managed this way regardless of `-Mode`.
 5. **Does not copy** the demo content (the manifest's `Demo` list): `templates/sql/`, `templates/metadata/`, `templates/ssis-project/`, `install/Install-Toolkit.ps1`, the demo script, this `README.md`, or the `template-cleanup.yml` workflow. Those are for the AdventureWorks2025 walkthrough that ships with the template, not for your repo.
@@ -128,50 +128,50 @@ Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-s
 
 ### Why these four
 
-These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn — staging, SCD Type 1, SCD Type 2, and surrogate-key fact loads — not toolkit-invented shapes. See [Dimensional modeling and load patterns](#references) below for the per-topic links; each pattern subsection cites the most specific reference inline.
+These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn (staging, SCD Type 1, SCD Type 2, surrogate-key fact loads), not toolkit-invented shapes. See [Dimensional modeling and load patterns](#references) below for the per-topic links; each pattern subsection cites the most specific reference inline.
 
-#### Staging load — `Source → stg.*`
+#### Staging load: `Source → stg.*`
 
-**Why it exists.** It decouples extraction from transformation. Source systems are often slow, transient, behind firewalls, or owned by another team. Landing rows in a `stg.*` table inside your warehouse gives you a replayable snapshot you control: downstream dim and fact loads can re-run without re-querying the source, source-schema drift is isolated to one place, and incremental-load watermarks live next to the data. Staging is also the only place where raw column projection and minimal type casting happen — **no business logic, no surrogate-key assignment, no history tracking**.
+Staging decouples extraction from transformation. Source systems are often slow, transient, behind firewalls, or owned by another team. Landing rows in a `stg.*` table inside your warehouse gives you a replayable snapshot you control: downstream dim and fact loads can re-run without re-querying the source, source-schema drift is isolated to one place, and incremental-load watermarks live next to the data. Staging is also the only place where raw column projection and minimal type casting happen. No business logic, no surrogate-key assignment, no history tracking.
 
-**Shape.** OLE DB Source → OLE DB Destination. Optional truncate-before-load via an Execute SQL Task. The source `SELECT` may flatten joins (the demo's `Sales.Customer` → `stg.Customer` joins `Person.Person` and `Person.EmailAddress`), but it does not enrich.
+Data flow: OLE DB Source then OLE DB Destination, with an optional truncate-before-load Execute SQL Task. The source `SELECT` may flatten joins (the demo's `Sales.Customer` to `stg.Customer` joins `Person.Person` and `Person.EmailAddress`), but it does not enrich.
 
-**Reference.** Microsoft Learn — [Load tables in a dimensional model → *Stage data*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#stage-data): recommends a dedicated `staging` schema to minimize source-system impact and to make the ETL restartable.
+Reference: Microsoft Learn, [Load tables in a dimensional model, *Stage data*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#stage-data). Recommends a dedicated `staging` schema to minimize source-system impact and to make the ETL restartable.
 
-#### Type-1 dimension — `stg.* → dim.*`, overwrite on key match
+#### Type-1 dimension: `stg.* → dim.*`, overwrite on key match
 
-**Why it exists.** Some attributes do not need history. A customer's preferred email or phone number changes? Just overwrite the row — nobody runs analytics that asks "what was this customer's email on March 15th?" Type-1 is the right fit for **master and reference data, and for slowly-changing attributes that do not drive analytical queries**. It is cheaper than Type-2 in storage (no row versioning), simpler in queries (no `IsCurrent` filter, no effective-date range join), and faster to load.
+Some attributes do not need history. When a customer's preferred email or phone number changes, overwriting the row is fine; nobody runs analytics that asks "what was this customer's email on March 15th?" Type-1 fits master and reference data, and any slowly-changing attribute that does not drive analytical queries. It is cheaper than Type-2 in storage (no row versioning), simpler in queries (no `IsCurrent` filter, no effective-date range join), and faster to load.
 
-**Shape.** Lookup against `dim` by business key → Conditional Split (matched → update, unmatched → insert) → OLE DB Command for updates plus OLE DB Destination for inserts.
+Data flow: Lookup against `dim` by business key, then Conditional Split (matched routes to update, unmatched routes to insert), then OLE DB Command for updates plus OLE DB Destination for inserts.
 
-**References.** Microsoft Learn — [Dimension tables → *SCD Type 1*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-1) (overwrite-in-place definition) and [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) (the native SSIS SCD Wizard's *changing attribute* path — same shape this module emits).
+References: Microsoft Learn, [Dimension tables, *SCD Type 1*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-1) for the overwrite-in-place definition, and [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) for the native SSIS SCD Wizard's *changing attribute* path. That wizard output is the same shape this module emits.
 
-#### Type-2 dimension (SCD-2) — `stg.* → dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo`
+#### Type-2 dimension (SCD-2): `stg.* → dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo`
 
-**Why it exists.** When you need to answer **"what did this dimension look like at the time the fact happened?"** A sales order from last March must join the customer dim row that was current last March, not today's row — even if the customer's territory, segment, or address has changed since. Type-2 is required for accurate point-in-time reporting, regulatory reporting where history cannot be rewritten, and any attribute drift that drives analytical slicing (territory reassignments, segment migrations, status transitions).
+Use Type-2 when you need to answer "what did this dimension look like at the time the fact happened?" A sales order from last March must join the customer dim row that was current last March, not today's row, even if the customer's territory, segment, or address has changed since. Type-2 is required for accurate point-in-time reporting, for regulatory reporting where history cannot be rewritten, and for any attribute drift that drives analytical slicing (territory reassignments, segment migrations, status transitions).
 
-**Shape.** Lookup against `dim` by business key → Conditional Split (new business key / tracked attribute changed / no change) → for changed rows: expire the old row (`IsCurrent = 0`, `EffectiveTo = now`) and insert a new row (`IsCurrent = 1`, `EffectiveFrom = now`, `EffectiveTo = 9999-12-31`). The metadata JSON pins which attributes are *tracked* (trigger a new version) versus *Type-1 overwritten in place*.
+Data flow: Lookup against `dim` by business key, then Conditional Split (new business key, tracked attribute changed, or no change). For changed rows, expire the old row (`IsCurrent = 0`, `EffectiveTo = now`) and insert a new row (`IsCurrent = 1`, `EffectiveFrom = now`, `EffectiveTo = 9999-12-31`). The metadata JSON pins which attributes are *tracked* (trigger a new version) versus *Type-1 overwritten in place*.
 
-**References.** Microsoft Learn — [Dimension tables → *SCD Type 2*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-2) (surrogate key + validity columns + current flag), [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) (the SSIS SCD Wizard's *historical attribute* path), and [Power BI guidance → *Star schema → Type 2 SCD*](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema#type-2-scd).
+References: Microsoft Learn, [Dimension tables, *SCD Type 2*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#scd-type-2) for surrogate key plus validity columns plus current flag, [Slowly Changing Dimension transformation](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) for the SSIS SCD Wizard's *historical attribute* path, and [Power BI guidance, *Star schema, Type 2 SCD*](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema#type-2-scd).
 
-#### Fact load — `stg.* → fact.*` with surrogate-key lookups
+#### Fact load: `stg.* → fact.*` with surrogate-key lookups
 
-**Why it exists.** Facts store the measurements; dimensions hold the descriptive context. A fact row holds **surrogate keys** (small INTs sourced from the dim tables), not natural / business keys, for three reasons: (a) surrogate keys are stable across SCD-2 versions, so a fact row pins itself to a specific dim version forever; (b) joins are narrower and faster than joining on composite natural keys; (c) source-system key changes do not ripple into the warehouse. The fact loader's job is mechanical: take staged business keys, look up the right surrogate keys (current row for Type-1 dims, point-in-time row for Type-2 dims), write the fact.
+Facts store the measurements; dimensions hold the descriptive context. A fact row holds surrogate keys (small INTs sourced from the dim tables), not natural or business keys, for three reasons: (a) surrogate keys are stable across SCD-2 versions, so a fact row pins itself to a specific dim version forever; (b) joins are narrower and faster than joining on composite natural keys; (c) source-system key changes do not ripple into the warehouse. The fact loader's job is mechanical: take staged business keys, look up the right surrogate keys (current row for Type-1 dims, point-in-time row for Type-2 dims), write the fact.
 
-**Shape.** OLE DB Source on `stg` → one Lookup per foreign key (to each `dim`) → Conditional Split for lookup-miss handling (route to error table or insert an inferred-member row) → OLE DB Destination into `fact`.
+Data flow: OLE DB Source on `stg`, then one Lookup per foreign key (to each `dim`), then Conditional Split for lookup-miss handling (route to error table or insert an inferred-member row), then OLE DB Destination into `fact`.
 
-**References.** Microsoft Learn — [Fact tables in a dimensional model](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables) (dimension-key columns as surrogate FKs + measure columns), [Load tables → *Process fact tables*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#process-fact-tables) (per-dimension surrogate-key lookup pattern, point-in-time for SCD-2), and [Dimension tables → *Surrogate key*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#surrogate-key) (why facts join on surrogate keys, not natural keys).
+References: Microsoft Learn, [Fact tables in a dimensional model](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables) for dimension-key columns as surrogate FKs plus measure columns, [Load tables, *Process fact tables*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables#process-fact-tables) for the per-dimension surrogate-key lookup pattern (point-in-time for SCD-2), and [Dimension tables, *Surrogate key*](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables#surrogate-key) for why facts join on surrogate keys, not natural keys.
 
 ### What is deliberately not a pattern
 
-- **Source → fact direct.** Skips staging, couples extraction to transformation, no replay. Refuse.
-- **Truncate-and-reload dim or fact.** Destroys history; breaks SCD-2 contract; invalidates any saved fact-to-dim joins. Refuse.
-- **SCD-3 / SCD-6.** Rare in practice; the column-explosion of SCD-3 and the hybrid complexity of SCD-6 are usually better served by a second Type-2 dim or a snapshot fact. Not a pattern today; raise an issue if you have a real case.
+- **Source → fact direct.** Skips staging, couples extraction to transformation, leaves no replay path. The agent refuses and asks for a staging step first.
+- **Truncate-and-reload dim or fact.** Destroys history, breaks the SCD-2 contract, and invalidates any saved fact-to-dim joins. The agent refuses.
+- **SCD-3 / SCD-6.** Rare in practice; the column-explosion of SCD-3 and the hybrid complexity of SCD-6 are usually better served by a second Type-2 dim or a snapshot fact. Raise an issue if you have a real case.
 - **Aggregated / snapshot facts.** A specialization of the fact load. Build them on top of the `FactLoad` module rather than as a separate pattern.
 
 ## Read next
 
-- [GUIDE.md](GUIDE.md): hands-on walkthrough driven entirely from GitHub Copilot Chat — generate, modify, validate, and document all four package patterns by typing prompts, no PowerShell required after the one-time prep.
+- [GUIDE.md](GUIDE.md): hands-on walkthrough driven entirely from GitHub Copilot Chat. Generate, modify, validate, and document all four package patterns by typing prompts; no PowerShell required after the one-time prep.
 - [AGENTS.md](AGENTS.md): repo-wide agent contract.
 - [install/overlay.manifest.psd1](install/overlay.manifest.psd1): single source of truth for the brownfield installer and template-cleanup workflow.
 
@@ -181,39 +181,39 @@ The toolkit's design decisions trace back to these Microsoft Learn topics. Use t
 
 **SSIS managed object model and CLIs**
 
-- [`Microsoft.SqlServer.Dts.Runtime` namespace](https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.dts.runtime) — the .NET API the toolkit's host wraps.
-- [Building packages programmatically](https://learn.microsoft.com/en-us/sql/integration-services/building-packages-programmatically/building-packages-programmatically) — landing page for the OM authoring model.
-- [Loading and saving packages programmatically](https://learn.microsoft.com/en-us/sql/integration-services/building-packages-programmatically/loading-and-saving-packages) — `Application.LoadPackage` and `Package.SaveToXml`, used by the generator and by `Test-SsisDesignerLoad.ps1`.
-- [`dtexec` utility](https://learn.microsoft.com/en-us/sql/integration-services/packages/dtexec-utility) — called by `Test-SsisPackage.ps1` with `/Validate /WarnAsError`.
-- [`dtutil` utility](https://learn.microsoft.com/en-us/sql/integration-services/dtutil-utility) — `/IDRegenerate`, the last-resort fix for lineage-ID corruption.
-- [SSIS DevOps standalone build tools (`SSISBuild.exe`)](https://learn.microsoft.com/en-us/sql/integration-services/devops/ssis-devops-standalone) — the headless project builder referenced by the roadmap `Build-SsisIspac.ps1` primitive.
-- [`[MS-DTSX]` package XML format](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx/235600e9-0c13-4b5b-a388-aa3c65aec1dd) and [`[MS-DTSX2]`](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx2/fb216aa4-62ab-41c8-a6d5-5b1002739d21) — the open spec for the `.dtsx` file. Read-only reference; the toolkit never hand-writes this.
+- [`Microsoft.SqlServer.Dts.Runtime` namespace](https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.dts.runtime): the .NET API the toolkit's host wraps.
+- [Building packages programmatically](https://learn.microsoft.com/en-us/sql/integration-services/building-packages-programmatically/building-packages-programmatically): landing page for the OM authoring model.
+- [Loading and saving packages programmatically](https://learn.microsoft.com/en-us/sql/integration-services/building-packages-programmatically/loading-and-saving-packages): `Application.LoadPackage` and `Package.SaveToXml`, used by the generator and by `Test-SsisDesignerLoad.ps1`.
+- [`dtexec` utility](https://learn.microsoft.com/en-us/sql/integration-services/packages/dtexec-utility): called by `Test-SsisPackage.ps1` with `/Validate /WarnAsError`.
+- [`dtutil` utility](https://learn.microsoft.com/en-us/sql/integration-services/dtutil-utility): `/IDRegenerate`, the last-resort fix for lineage-ID corruption.
+- [SSIS DevOps standalone build tools (`SSISBuild.exe`)](https://learn.microsoft.com/en-us/sql/integration-services/devops/ssis-devops-standalone): the headless project builder referenced by the roadmap `Build-SsisIspac.ps1` primitive.
+- [`[MS-DTSX]` package XML format](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx/235600e9-0c13-4b5b-a388-aa3c65aec1dd) and [`[MS-DTSX2]`](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx2/fb216aa4-62ab-41c8-a6d5-5b1002739d21): the open spec for the `.dtsx` file. Read-only reference; the toolkit never hand-writes this.
 
 **Project deployment, catalog, and security**
 
-- [Deploy Integration Services projects and packages](https://learn.microsoft.com/en-us/sql/integration-services/packages/deploy-integration-services-ssis-projects-and-packages) — Project Deployment Model, `.ispac`, SSISDB. The only execution path the toolkit supports.
-- [Deploy an SSIS project with PowerShell](https://learn.microsoft.com/en-us/sql/integration-services/ssis-quickstart-deploy-powershell) — pattern for the roadmap `Publish-SsisIspac.ps1` primitive.
-- [`catalog.deploy_project`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-deploy-project-ssisdb-database) — server-side project deployment.
-- [`catalog.validate_package`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-validate-package-ssisdb-database) — server-side pre-execution validation (catches env-ref and project-parameter issues `dtexec /Validate` cannot).
-- [`catalog.create_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-create-execution-ssisdb-database) + [`catalog.start_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-start-execution-ssisdb-database) — the canonical execution sequence for the roadmap `Start-SsisExecution.ps1` primitive.
-- [Access control for sensitive data in packages](https://learn.microsoft.com/en-us/sql/integration-services/security/access-control-for-sensitive-data-in-packages) — `ProtectionLevel`. The toolkit pins every package and project to `DontSaveSensitive`.
-- [SSIS on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-migrate-ssis) — the constraint that makes the toolkit Windows-only (no SSISDB on Linux; Project Deployment Model unsupported).
+- [Deploy Integration Services projects and packages](https://learn.microsoft.com/en-us/sql/integration-services/packages/deploy-integration-services-ssis-projects-and-packages): Project Deployment Model, `.ispac`, SSISDB. The only execution path the toolkit supports.
+- [Deploy an SSIS project with PowerShell](https://learn.microsoft.com/en-us/sql/integration-services/ssis-quickstart-deploy-powershell): pattern for the roadmap `Publish-SsisIspac.ps1` primitive.
+- [`catalog.deploy_project`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-deploy-project-ssisdb-database): server-side project deployment.
+- [`catalog.validate_package`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-validate-package-ssisdb-database): server-side pre-execution validation (catches env-ref and project-parameter issues `dtexec /Validate` cannot).
+- [`catalog.create_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-create-execution-ssisdb-database) + [`catalog.start_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-start-execution-ssisdb-database): the canonical execution sequence for the roadmap `Start-SsisExecution.ps1` primitive.
+- [Access control for sensitive data in packages](https://learn.microsoft.com/en-us/sql/integration-services/security/access-control-for-sensitive-data-in-packages): `ProtectionLevel`. The toolkit pins every package and project to `DontSaveSensitive`.
+- [SSIS on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-migrate-ssis): the constraint that makes the toolkit Windows-only (no SSISDB on Linux; Project Deployment Model unsupported).
 
 **Dimensional modeling and load patterns**
 
-The four pattern modules under `tools\lib\patterns\` (`StagingLoad`, `Type1Dimension`, `Type2Dimension`, `FactLoad`) implement these Microsoft-documented shapes. Following these gives you portable warehouse loads that any SSIS, Fabric, Synapse, or Power BI practitioner will recognize — not toolkit-specific conventions.
+The four pattern modules under `tools\lib\patterns\` (`StagingLoad`, `Type1Dimension`, `Type2Dimension`, `FactLoad`) implement these Microsoft-documented shapes. Following them gives you portable warehouse loads that any SSIS, Fabric, Synapse, or Power BI practitioner will recognize, not toolkit-specific conventions.
 
-- [Understand star schema and the importance for Power BI](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema) — fact-vs-dimension split, SCD Type 1 and Type 2 definitions, surrogate keys. Cites *The Data Warehouse Toolkit* (Ralph Kimball) as the canonical reference.
-- [Dimensional modeling in Microsoft Fabric data warehouse — overview](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-overview) — star schema, fact and dimension table roles, periodic ETL loading. Also cites the Kimball Toolkit.
-- [Dimensional modeling — dimension tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables) — surrogate keys, natural / business keys, SCD Type 1, SCD Type 2, managing historical change. The conceptual basis for the `Type1Dimension` and `Type2Dimension` modules.
-- [Dimensional modeling — fact tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables) — fact structure (dimension keys as surrogate FKs + measures + audit columns), transaction / periodic snapshot / accumulating snapshot fact types. The conceptual basis for the `FactLoad` module.
-- [Dimensional modeling — load tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables) — end-to-end ETL flow: stage → process dimensions (per SCD type) → process facts (with surrogate-key lookups and inferred dimension members). The conceptual basis for the `StagingLoad` module and for the lookup behavior in `FactLoad`.
-- [Slowly Changing Dimension transformation (SSIS)](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation) — the SSIS-native SCD Wizard, with the same Type 1 (*changing attribute*) and Type 2 (*historical attribute*) outputs the `Type1Dimension` and `Type2Dimension` modules emit. The wizard does not support Type 3, which is why we don't either.
+- [Understand star schema and the importance for Power BI](https://learn.microsoft.com/en-us/power-bi/guidance/star-schema): fact-vs-dimension split, SCD Type 1 and Type 2 definitions, surrogate keys. Cites *The Data Warehouse Toolkit* (Ralph Kimball) as the canonical reference.
+- [Dimensional modeling in Microsoft Fabric data warehouse, overview](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-overview): star schema, fact and dimension table roles, periodic ETL loading. Also cites the Kimball Toolkit.
+- [Dimensional modeling, dimension tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-dimension-tables): surrogate keys, natural / business keys, SCD Type 1, SCD Type 2, managing historical change. The conceptual basis for the `Type1Dimension` and `Type2Dimension` modules.
+- [Dimensional modeling, fact tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-fact-tables): fact structure (dimension keys as surrogate FKs plus measures plus audit columns), transaction / periodic snapshot / accumulating snapshot fact types. The conceptual basis for the `FactLoad` module.
+- [Dimensional modeling, load tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables): end-to-end ETL flow: stage, then process dimensions (per SCD type), then process facts (with surrogate-key lookups and inferred dimension members). The conceptual basis for the `StagingLoad` module and for the lookup behavior in `FactLoad`.
+- [Slowly Changing Dimension transformation (SSIS)](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation): the SSIS-native SCD Wizard, with the same Type 1 (*changing attribute*) and Type 2 (*historical attribute*) outputs the `Type1Dimension` and `Type2Dimension` modules emit. The wizard does not support Type 3, which is why this toolkit does not either.
 
 **Copilot customization**
 
-- [VS Code Copilot customization overview](https://code.visualstudio.com/docs/copilot/customization/overview) — agents, skills, prompts, and instructions. The portable schema both Visual Studio 2026 and VS Code honor.
-- [`AGENTS.md` cross-tool convention](https://agents.md/) — the format used for the repo-wide agent contract.
+- [VS Code Copilot customization overview](https://code.visualstudio.com/docs/copilot/customization/overview): agents, skills, prompts, and instructions. The portable schema both Visual Studio 2026 and VS Code honor.
+- [`AGENTS.md` cross-tool convention](https://agents.md/): the format used for the repo-wide agent contract.
 
 ## Requirements
 
