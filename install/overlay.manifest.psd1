@@ -37,8 +37,10 @@
         # PowerShell primitives — the only thing the agents actually invoke at runtime
         @{ Path = 'tools/README.md';                                 Action = 'Copy' }
         @{ Path = 'tools/New-SsisPackage.ps1';                       Action = 'Copy' }
+        @{ Path = 'tools/New-SsisProject.ps1';                       Action = 'Copy' }
         @{ Path = 'tools/Test-SsisPackage.ps1';                      Action = 'Copy' }
         @{ Path = 'tools/Test-SsisDesignerLoad.ps1';                 Action = 'Copy' }
+        @{ Path = 'tools/Remove-DemoAssets.ps1';                     Action = 'Copy' }
         @{ Path = 'tools/lib/SsisOm.psm1';                           Action = 'Copy' }
         @{ Path = 'tools/lib/patterns';                              Action = 'CopyDir' }
         @{ Path = 'tools/lib/SsisOmHost/Build-SsisOmHost.ps1';       Action = 'Copy' }

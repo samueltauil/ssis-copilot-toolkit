@@ -105,6 +105,44 @@
       "problemMatcher": []
     },
     {
+      "label": "SSIS: Generate project files (.dtproj, .conmgr, .params)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/New-SsisProject.ps1"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "SSIS: Remove demo assets (cleanup)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/Remove-DemoAssets.ps1"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
       "label": "SSIS: Install toolkit (one-time bootstrap)",
       "type": "shell",
       "command": "pwsh",

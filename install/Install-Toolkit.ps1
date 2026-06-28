@@ -44,11 +44,13 @@ if (-not (Get-Module -ListAvailable -Name SqlServer)) {
 }
 Import-Module SqlServer
 
+$sqlCommon = @{ ServerInstance = $Server; TrustServerCertificate = $true }
+
 # --- 1. Connectivity check ---------------------------------------------------
 
 Write-Step "Verifying connectivity to $Server..."
 try {
-    Invoke-Sqlcmd -ServerInstance $Server -Database master -Query 'SELECT 1 AS ok' -ErrorAction Stop | Out-Null
+    Invoke-Sqlcmd @sqlCommon -Database master -Query 'SELECT 1 AS ok' -ErrorAction Stop | Out-Null
     Write-Ok "Connected to $Server."
 }
 catch {
@@ -58,7 +60,7 @@ catch {
 # --- 2. SSISDB check ---------------------------------------------------------
 
 Write-Step 'Verifying SSISDB catalog exists...'
-$ssisdb = Invoke-Sqlcmd -ServerInstance $Server -Database master -Query @"
+$ssisdb = Invoke-Sqlcmd @sqlCommon -Database master -Query @"
 SELECT name FROM sys.databases WHERE name = 'SSISDB';
 "@
 
@@ -72,17 +74,17 @@ else {
 # --- 3. Demo databases -------------------------------------------------------
 
 foreach ($db in 'CopilotSSIS_Source', 'CopilotSSIS_Warehouse') {
-    $exists = Invoke-Sqlcmd -ServerInstance $Server -Database master -Query "SELECT name FROM sys.databases WHERE name = '$db';"
+    $exists = Invoke-Sqlcmd @sqlCommon -Database master -Query "SELECT name FROM sys.databases WHERE name = '$db';"
     if ($exists -and -not $Force) {
         Write-Skip "$db already exists. Use -Force to recreate."
         continue
     }
     if ($exists -and $Force) {
         Write-Step "Dropping $db (-Force)..."
-        Invoke-Sqlcmd -ServerInstance $Server -Database master -Query "ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$db];"
+        Invoke-Sqlcmd @sqlCommon -Database master -Query "ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$db];"
     }
     Write-Step "Creating $db..."
-    Invoke-Sqlcmd -ServerInstance $Server -Database master -Query "CREATE DATABASE [$db];"
+    Invoke-Sqlcmd @sqlCommon -Database master -Query "CREATE DATABASE [$db];"
     Write-Ok "$db created."
 }
 
@@ -94,7 +96,7 @@ if ($sqlDir) {
     foreach ($s in $scripts) {
         Write-Step "Applying $($s.Name)..."
         # TODO P4: target DB inferred from script header USE clause. For now, run against master and rely on the script's USE.
-        Invoke-Sqlcmd -ServerInstance $Server -Database master -InputFile $s.FullName
+        Invoke-Sqlcmd @sqlCommon -Database master -InputFile $s.FullName
         Write-Ok "$($s.Name) applied."
     }
 }
@@ -105,7 +107,7 @@ else {
 # --- 5. AdventureWorks2025 verification --------------------------------------
 
 Write-Step 'Verifying AdventureWorks2025 attached...'
-$aw = Invoke-Sqlcmd -ServerInstance $Server -Database master -Query "SELECT name FROM sys.databases WHERE name = 'AdventureWorks2025';"
+$aw = Invoke-Sqlcmd @sqlCommon -Database master -Query "SELECT name FROM sys.databases WHERE name = 'AdventureWorks2025';"
 if ($aw) {
     Write-Ok 'AdventureWorks2025 present.'
 }

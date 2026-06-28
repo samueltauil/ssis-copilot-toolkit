@@ -34,6 +34,7 @@ Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-s
 | Generate a package from metadata JSON | `.\tools\New-SsisPackage.ps1 -Metadata <file.json>` |
 | Validate (`dtexec /Validate /WarnAsError`) | `.\tools\Test-SsisPackage.ps1 -Package <file.dtsx>` |
 | Designer-load round-trip (`Application.LoadPackage`) | `.\tools\Test-SsisDesignerLoad.ps1 -Package <file.dtsx>` |
+| Generate `.dtproj`, connection managers, and project params | `.\tools\New-SsisProject.ps1` |
 
 *Demo-only (manifest's `Demo` list — template repos and contributors, not brownfield repos):*
 

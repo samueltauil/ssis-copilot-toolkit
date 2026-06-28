@@ -66,12 +66,12 @@ if (-not (Test-Path -LiteralPath $exePath)) {
 }
 
 if (-not $OutputPath) {
-    # Mirror the helper exe's default: templates/ssis-project/Packages/<packageName>.dtsx.
+    # Flat structure: packages sit alongside .dtproj in templates/ssis-project/.
     $meta = Get-Content -LiteralPath $Metadata -Raw | ConvertFrom-Json
     if (-not $meta.packageName) {
         throw "metadata.packageName missing - cannot infer OutputPath."
     }
-    $pkgDir = Join-Path $repoRoot 'templates\ssis-project\Packages'
+    $pkgDir = Join-Path $repoRoot 'templates\ssis-project'
     if (-not (Test-Path -LiteralPath $pkgDir)) {
         New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
     }

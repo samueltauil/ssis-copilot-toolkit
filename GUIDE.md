@@ -122,9 +122,26 @@ The agent reads the package via the managed OM and writes a Markdown file under 
 
 ## Step 8. Open a generated package in the SSIS designer
 
-In Visual Studio 2026 (18.4+) with the SQL Server Data Tools workload installed, open `templates/ssis-project/` as a folder and double-click any `.dtsx`. Control flow and data flow render cleanly. This is the round-trip `Test-SsisDesignerLoad.ps1` proves on every gate run.
+First, generate the Visual Studio project file and connection managers:
 
-> A full `.dtproj` for the demo is roadmap; the `.dtsx` files are valid standalone for design-time inspection and for `dtexec /Validate`.
+```text
+@ssis-author Run .\tools\New-SsisProject.ps1 to generate the .dtproj, connection managers, and project parameters.
+```
+
+Or run it directly:
+
+```powershell
+.\tools\New-SsisProject.ps1
+```
+
+This creates:
+- `templates/ssis-project/CopilotSsisDemos.dtproj` — the VS project file
+- `templates/ssis-project/ConnectionManagers/*.conmgr` — OLE DB connections for AdventureWorks2025 and CopilotSSIS_Warehouse
+- `templates/ssis-project/Project.params` — project parameters (SourceServer, TargetServer)
+
+Then open `CopilotSsisDemos.dtproj` in Visual Studio 2026 (18.4+) with the SQL Server Data Tools workload. Control flow and data flow render cleanly. Right-click any package → **Execute Package** to run it.
+
+> These generated files are gitignored (regenerable on demand). If connection strings need updating, re-run with `-SourceServer` and `-TargetServer` parameters.
 
 ---
 
@@ -132,13 +149,15 @@ In Visual Studio 2026 (18.4+) with the SQL Server Data Tools workload installed,
 
 These exist for completeness but depend on roadmap primitives. The agent will refuse on invocation and tell you exactly which primitive is missing:
 
-- `/scaffold-new-ssis-project`: needs a project-scaffolding primitive.
 - `/deploy-and-execute`: needs `Build-SsisIspac.ps1` + `Publish-SsisIspac.ps1` + `Start-SsisExecution.ps1`.
+
+> `/scaffold-new-ssis-project` is now functional via `tools\New-SsisProject.ps1`.
 
 When those land, the chat experience is the same shape: a single prompt, the agent owns the work end-to-end, and `@ssis-validator` (or the SSISDB equivalent) reports the verdict.
 
 ## What's next
 
+- **Clean up and start fresh.** Run `.\tools\Remove-DemoAssets.ps1` to remove all generated packages, project files, SSISDB content, and built artifacts. Add `-DropWarehouse` to also drop the demo database. Idempotent and safe to repeat.
 - **Drop the toolkit into your existing SSIS repo.** One-liner in the [README brownfield section](README.md#2-existing-ssis-repo-drop-in-the-overlay). The demo content used in this guide is **not** copied; your repo keeps its own data model. After installing, the same chat-first workflow above works against your tables.
 - **Add a fifth pattern.** Write a module under `tools\lib\patterns\`, extend the dispatcher in `tools\lib\SsisOm.psm1`, document the metadata fields in [.github/instructions/metadata-schema.instructions.md](.github/instructions/metadata-schema.instructions.md), and add a slash prompt under [.github/prompts/](.github/prompts/). `@ssis-author` picks it up automatically.
 - **Read the contract.** [AGENTS.md](AGENTS.md) covers the hard rules, the two-layer architecture (PowerShell primitives + skills/agents), and what NOT to invent.

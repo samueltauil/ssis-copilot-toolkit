@@ -10,8 +10,10 @@ Anything that orchestrates multiple primitives (validate → designer-load → b
 |---|---|---|
 | `lib/SsisOmHost/Build-SsisOmHost.ps1` | One-time build of the .NET 8 console host that fronts the managed OM | `dotnet publish` against `lib/SsisOmHost/*.cs` |
 | `New-SsisPackage.ps1` | Reads a metadata JSON, dispatches to a `lib/patterns/*.psm1` module, calls the host to write `.dtsx` | `Microsoft.SqlServer.Dts.Runtime.Package.SaveToXml` (via the host) |
+| `New-SsisProject.ps1` | Generates `.dtproj`, `.conmgr`, and `.params` files for Visual Studio Designer | Well-formed XML generation |
 | `Test-SsisPackage.ps1` | Runtime validation | `dtexec.exe /Validate /WarnAsError` |
 | `Test-SsisDesignerLoad.ps1` | Round-trip via the managed OM | `Microsoft.SqlServer.Dts.Runtime.Application.LoadPackage` |
+| `Remove-DemoAssets.ps1` | Cleanup script — drops warehouse DB, SSISDB Demo folder, generated artifacts | `SqlServer` module + file system operations |
 
 ## Roadmap primitives
 

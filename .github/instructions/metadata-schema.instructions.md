@@ -59,4 +59,6 @@ Failures stop the pipeline before the OM is even loaded.
 
 ## Column names
 
-Never invent AdventureWorks2025 column names. Consult the `adventureworks-mapping` skill (`.github/skills/adventureworks-mapping/SKILL.md`) for the canonical AW → `stg`/`dim` mapping before authoring a metadata JSON.
+Never invent column names. At authoring time, query the source database schema via MCP tools (`mssql_list_tables`, `mssql_run_query` against `INFORMATION_SCHEMA.COLUMNS`) to discover actual column names and data types. If MCP database access is unavailable, ask the user to confirm column names explicitly.
+
+For the demo walkthrough (AdventureWorks2025 source), consult the `adventureworks-mapping` skill (`.github/skills/adventureworks-mapping/SKILL.md`) for the canonical AW → `stg`/`dim` mapping.

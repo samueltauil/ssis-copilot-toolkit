@@ -61,7 +61,7 @@ Direct example:
 
 | Prompt | What it does |
 |---|---|
-| `/scaffold-new-ssis-project` | One-time setup. Creates `.dtproj`, `Project.params`, and the `Source` / `Warehouse` connection managers via the managed OM. (Refuses today; depends on a roadmap primitive.) |
+| `/scaffold-new-ssis-project` | One-time setup. Creates `.dtproj`, `Project.params`, and the `Source` / `Warehouse` connection managers via `tools/New-SsisProject.ps1`. |
 | `/generate-staging-package` | Source table to `stg.*` via OLE DB Source plus OLE DB Destination. |
 | `/generate-dim-type1-package` | `stg.*` to `dim.*` with overwrite-on-key-match (Type-1 SCD). |
 | `/generate-dim-type2-package` | `stg.*` to `dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo` (Type-2 SCD). |
@@ -93,6 +93,7 @@ You normally never call these yourself; `@ssis-author` does. They are surfaced i
 | `tools/New-SsisPackage.ps1 -Metadata <file.json>` | Generate a `.dtsx` from metadata JSON. |
 | `tools/Test-SsisPackage.ps1 -Package <file.dtsx>` | Validate via `dtexec /Validate /WarnAsError`. |
 | `tools/Test-SsisDesignerLoad.ps1 -Package <file.dtsx>` | Round-trip via `Microsoft.SqlServer.Dts.Runtime.Application.LoadPackage` to prove the designer can re-open it. |
+| `tools/New-SsisProject.ps1` | Generate `.dtproj`, connection managers (`.conmgr`), and `Project.params` for the demo project. |
 
 ### Skills (auto-loaded by Copilot)
 
@@ -113,7 +114,7 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 | `tools/lib/SsisOmHost/` | .NET 8 console host that wraps `Microsoft.SqlServer.Dts.Runtime` (`Program.cs`, `PackageBuilder.cs`, `MetadataHelpers.cs`, per-pattern builders under `Patterns/`). Built once via `Build-SsisOmHost.ps1` |
 | `.vscode/tasks.json` | Surfaces the primitives as `Ctrl+Shift+B` build tasks |
 
-Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-ssis-project` prompts, not yet shipped): `Build-SsisIspac.ps1`, `Publish-SsisIspac.ps1`, `Start-SsisExecution.ps1`, `Verify-ClonedProject.ps1`. The matching prompts refuse on invocation today.
+Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` prompt, not yet shipped): `Build-SsisIspac.ps1`, `Publish-SsisIspac.ps1`, `Start-SsisExecution.ps1`, `Verify-ClonedProject.ps1`. The matching prompt refuses on invocation today.
 
 ## The four supported package patterns
 
@@ -127,6 +128,8 @@ Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-s
 | Fact load | `stg.*` → `fact.*` with surrogate-key lookups | `FactLoad` |
 
 ### Why these four
+
+The toolkit follows the **Kimball dimensional modeling methodology** — the approach most SQL Server data warehouses have used since the 1990s. Kimball's core idea is simple: structure your warehouse as a star schema (central fact tables surrounded by dimension tables), stage raw extracts before transforming them, and version dimension rows with surrogate keys so facts remain historically accurate. Ralph Kimball's *The Data Warehouse Toolkit* (Wiley, now in its 3rd edition) is the canonical reference; Microsoft's own Fabric and Power BI documentation cites it directly (see [References](#references) below).
 
 These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn (staging, SCD Type 1, SCD Type 2, surrogate-key fact loads), not toolkit-invented shapes. See [Dimensional modeling and load patterns](#references) below for the per-topic links; each pattern subsection cites the most specific reference inline.
 
