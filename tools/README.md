@@ -17,7 +17,7 @@ Anything that orchestrates multiple primitives (validate → designer-load → b
 
 ## Roadmap primitives
 
-Referenced by `@ssis-author`'s `deploy-and-execute` and `scaffold-new-ssis-project` prompts and by Steps 3 and 4 of the delivery gate. Not yet on disk; both prompts refuse on invocation, and the delivery gate reports SKIPPED for the matching steps.
+Referenced by the **ssis-author** agent's `deploy-and-execute` and `scaffold-new-ssis-project` prompts and by Steps 3 and 4 of the delivery gate. Not yet on disk; both prompts refuse on invocation, and the delivery gate reports SKIPPED for the matching steps.
 
 | Script | Will do | Will wrap |
 |---|---|---|

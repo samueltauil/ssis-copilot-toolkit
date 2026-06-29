@@ -69,7 +69,7 @@ Cite the URL of the result in your diagnosis line.
 
 ## What the diagnosis looks like
 
-The `@ssis-validator` verdict expects **one line**, like:
+The **ssis-validator** verdict expects **one line**, like:
 
 > `diagnosis: DTS_E_OLEDBSRCADAPTERSTATIC_NOCOLUMNS — source.columns[3] ('AccountNum') does not exist on AdventureWorks2025.Sales.Customer; cf. adventureworks-mapping skill.`
 

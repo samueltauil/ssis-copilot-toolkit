@@ -22,15 +22,15 @@ _(None documented yet)_
 
 ## How to Generate Documentation
 
-For any package in [../ssis-project/Packages/](../ssis-project/Packages/):
+For any package in [../ssis-project/Packages/](../ssis-project/Packages/), select **ssis-author** from the agent picker, then:
 
 ```
-@ssis-author /generate-package-docs <PackageName>
+/generate-package-docs <PackageName>
 ```
 
 Example:
 ```
-@ssis-author /generate-package-docs Dim_Customer_Type1
+/generate-package-docs Dim_Customer_Type1
 ```
 
 The agent will:

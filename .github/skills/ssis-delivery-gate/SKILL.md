@@ -1,6 +1,6 @@
 ---
 name: ssis-delivery-gate
-description: Use to run the non-bypassable delivery gate after any SSIS-affecting change. Encodes the canonical sequence of primitive invocations (Test-SsisPackage → Test-SsisDesignerLoad → Build-SsisIspac → ssis-clone-roundtrip) and the triage hand-off on failure. Always invoked by @ssis-validator, optionally by @ssis-author during exploration.
+description: Use to run the non-bypassable delivery gate after any SSIS-affecting change. Encodes the canonical sequence of primitive invocations (Test-SsisPackage → Test-SsisDesignerLoad → Build-SsisIspac → ssis-clone-roundtrip) and the triage hand-off on failure. Always invoked by ssis-validator, optionally by ssis-author during exploration.
 ---
 
 # SSIS delivery gate

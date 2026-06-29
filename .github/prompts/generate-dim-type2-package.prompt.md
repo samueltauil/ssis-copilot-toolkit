@@ -17,7 +17,7 @@ Steps:
 1. Verify target dim shape via `mssql_run_query` against `INFORMATION_SCHEMA.COLUMNS`.
 2. Write `templates/metadata/<PackageName>.metadata.json` with `pattern: "type2-dim"`, all SCD-2 fields, the columns array, and `protectionLevel: "DontSaveSensitive"`.
 3. Run `.\tools\New-SsisPackage.ps1 -Metadata <path>`.
-4. Run the delivery gate via `@ssis-validator` (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
+4. Run the delivery gate by invoking the **ssis-validator** agent (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
 5. Report.
 
 Refuse if the target dim is missing any of the three required SCD-2 columns. Provide the user with the exact `ALTER TABLE` statements to add them, then re-prompt.

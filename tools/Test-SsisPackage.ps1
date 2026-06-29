@@ -5,7 +5,7 @@
 .DESCRIPTION
   Single-purpose primitive. Returns a PSCustomObject with the exit code,
   the last lines of dtexec output, and a PASS/FAIL string. The
-  ssis-delivery-gate skill (run by @ssis-validator) calls this and triages
+  ssis-delivery-gate skill (run by ssis-validator) calls this and triages
   any failure via the dtexec-validation-triage skill.
 
   This script DOES NOT triage, DOES NOT propose fixes, DOES NOT run other

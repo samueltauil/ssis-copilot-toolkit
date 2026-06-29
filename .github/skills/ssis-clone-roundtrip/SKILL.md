@@ -7,7 +7,7 @@ description: Use as Step 4 of the ssis-delivery-gate. Performs a clean `git clon
 
 This skill is the final step of the delivery gate. It guarantees the property AGENTS.md promises: **a developer can clone this repo and open the `.dtproj` in Visual Studio (or build with `SSISBuild.exe`) without errors.**
 
-Run it from `@ssis-validator` after Steps 1–3 of [`ssis-delivery-gate`](../ssis-delivery-gate/SKILL.md) pass.
+Run it by invoking the **ssis-validator** agent after Steps 1–3 of [`ssis-delivery-gate`](../ssis-delivery-gate/SKILL.md) pass.
 
 ## Procedure
 

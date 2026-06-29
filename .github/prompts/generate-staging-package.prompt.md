@@ -13,7 +13,7 @@ Inputs you will gather (ask the user only what is missing):
 Steps:
 1. Write `templates/metadata/<PackageName>.metadata.json` with `pattern: "staging"`, the columns array, `protectionLevel: "DontSaveSensitive"`, and `truncateBeforeLoad`.
 2. Run `.\tools\New-SsisPackage.ps1 -Metadata <path>` — emits `templates/ssis-project/Packages/<PackageName>.dtsx`.
-3. Run the delivery gate via `@ssis-validator` (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)) — `Test-SsisPackage.ps1` → `Test-SsisDesignerLoad.ps1`. (`Build-SsisIspac.ps1` and `Verify-ClonedProject.ps1` are roadmap and skipped.)
+3. Run the delivery gate by invoking the **ssis-validator** agent (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)) — `Test-SsisPackage.ps1` → `Test-SsisDesignerLoad.ps1`. (`Build-SsisIspac.ps1` and `Verify-ClonedProject.ps1` are roadmap and skipped.)
 4. Report per the agent's standard output format.
 
 Refuse if the target schema is not `stg`. Refuse if the source table cannot be confirmed via the `adventureworks-mapping` skill or `mssql_list_tables`.

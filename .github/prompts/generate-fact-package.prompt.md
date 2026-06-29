@@ -19,7 +19,7 @@ Steps:
 2. Confirm `joinOn` columns exist in both staging and dim.
 3. Write `templates/metadata/<PackageName>.metadata.json` with `pattern: "fact"`, `dimensionLookups`, `measureColumns`, the columns array, and `protectionLevel: "DontSaveSensitive"`.
 4. Run `.\tools\New-SsisPackage.ps1 -Metadata <path>`.
-5. Run the delivery gate via `@ssis-validator` (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
+5. Run the delivery gate by invoking the **ssis-validator** agent (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
 6. Report.
 
 Refuse if any referenced dim is empty (the lookup would silently null-route every row). Tell the user to populate the dim first.

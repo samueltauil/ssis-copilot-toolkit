@@ -6,7 +6,7 @@ This file is the repo-wide contract every coding agent must follow (Copilot, Cla
 
 ## What this repo is
 
-A toolkit for authoring SQL Server Integration Services (SSIS) packages from chat via GitHub Copilot, in either **Visual Studio 2026 (18.4+)** or **VS Code**. Two custom agents (`@ssis-author`, `@ssis-validator`), a set of agent **skills** that encode the procedures, and a thin layer of **PowerShell primitives** that call the **managed object model** (`Microsoft.SqlServer.Dts.Runtime`) — the same code path the native SSIS designer uses internally. The agent never writes XML; PowerShell only does what skills can't (.NET interop, external `.exe` invocation, SSISDB stored procs).
+A toolkit for authoring SQL Server Integration Services (SSIS) packages from chat via GitHub Copilot, in either **Visual Studio 2026 (18.4+)** or **VS Code**. Two custom agents (**ssis-author**, **ssis-validator**), a set of agent **skills** that encode the procedures, and a thin layer of **PowerShell primitives** that call the **managed object model** (`Microsoft.SqlServer.Dts.Runtime`) — the same code path the native SSIS designer uses internally. The agent never writes XML; PowerShell only does what skills can't (.NET interop, external `.exe` invocation, SSISDB stored procs).
 
 Distributed two ways from a single source tree, both driven by the manifest:
 - **Template repo** — "Use this template" on GitHub. First push triggers [.github/workflows/template-cleanup.yml](.github/workflows/template-cleanup.yml), which reads the manifest, strips the `Demo` list, and regenerates `AGENTS.md` + `README.md` for the new repo.
@@ -17,8 +17,8 @@ Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-s
 ## Hard rules
 
 1. **Never hand-edit `.dtsx`, `.dtproj`, `.conmgr`, or `.params` files.** Regenerate from metadata JSON via `tools/New-SsisPackage.ps1`. Editing these files corrupts refIds, lineage IDs, or designer-load state.
-2. **`@ssis-author` is the only sanctioned entry point for SSIS work.** The default Copilot agent may answer general questions (e.g. "what does this PowerShell line do?") but must not author SSIS artifacts.
-3. **The validation gate is non-bypassable.** It is encoded in the [`ssis-delivery-gate`](.github/skills/ssis-delivery-gate/SKILL.md) skill and run by `@ssis-validator`. `@ssis-author` must spawn `@ssis-validator` after every SSIS-affecting change and surface its verdict verbatim. No verdict, no "done".
+2. **The ssis-author agent is the only sanctioned entry point for SSIS work.** The default Copilot agent may answer general questions (e.g. "what does this PowerShell line do?") but must not author SSIS artifacts.
+3. **The validation gate is non-bypassable.** It is encoded in the [`ssis-delivery-gate`](.github/skills/ssis-delivery-gate/SKILL.md) skill and run by the **ssis-validator** agent. The **ssis-author** agent must spawn **ssis-validator** after every SSIS-affecting change and surface its verdict verbatim. No verdict, no "done".
 4. **`ProtectionLevel = DontSaveSensitive` on project and every package.** Sensitive values resolve at runtime via SSISDB environment variables — never commit credentials.
 5. **Cite Microsoft Learn for SSIS technical decisions.** When introducing or changing a design rule, add the supporting `learn.microsoft.com` URL to the [README References section](README.md#references).
 
@@ -42,7 +42,7 @@ Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-s
 |---|---|
 | Provision SQL DBs + SSISDB for the AdventureWorks2025 walkthrough | `.\install\Install-Toolkit.ps1` |
 
-*Roadmap (not yet implemented; referenced by `@ssis-author`'s deploy-and-execute prompt):*
+*Roadmap (not yet implemented; referenced by **ssis-author**'s deploy-and-execute prompt):*
 
 | Goal | Primitive |
 |---|---|
@@ -67,7 +67,7 @@ Primitives surface as VS Code tasks (`.vscode/tasks.json` — Ctrl+Shift+B). Ski
 
 ## The four supported package patterns
 
-`@ssis-author` only emits packages that match one of these. Anything else: refuse and ask the user which pattern fits. Recipes (managed-OM call sequences) live in the [`ssis-package-patterns`](.github/skills/ssis-package-patterns/SKILL.md) skill; the matching builder module under `tools/lib/patterns/` implements that recipe.
+The **ssis-author** agent only emits packages that match one of these. Anything else: refuse and ask the user which pattern fits. Recipes (managed-OM call sequences) live in the [`ssis-package-patterns`](.github/skills/ssis-package-patterns/SKILL.md) skill; the matching builder module under `tools/lib/patterns/` implements that recipe.
 
 | Pattern | When | Builder module |
 |---|---|---|

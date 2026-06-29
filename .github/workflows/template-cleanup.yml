@@ -108,7 +108,7 @@ jobs:
             '   .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1'
             '   ```'
             '2. Open this repo in **Visual Studio 2026 (18.4+)** or **VS Code** with GitHub Copilot Chat enabled.'
-            '3. From Copilot Chat, invoke `@ssis-author` to author SSIS packages from metadata JSON, or `@ssis-validator` to run the delivery gate against an existing `.dtsx`.'
+            '3. From Copilot Chat, select **ssis-author** from the agent picker to author SSIS packages from metadata JSON, or select **ssis-validator** to run the delivery gate against an existing `.dtsx`.'
             ''
             'Detailed conventions live in [`.github/copilot-instructions.md`](.github/copilot-instructions.md) and [`AGENTS.md`](AGENTS.md).'
             ''

@@ -36,7 +36,7 @@
     Generates files for a custom project location and name.
 
 .NOTES
-    Primitive script — does one thing. Called by @ssis-author when scaffolding a project.
+    Primitive script — does one thing. Called by ssis-author when scaffolding a project.
     Never hand-edit the generated .dtproj, .conmgr, or .params files; regenerate via this script.
 #>
 

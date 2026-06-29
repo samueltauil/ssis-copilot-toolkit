@@ -194,6 +194,13 @@ namespace SsisOmHost
             }
         }
 
+        public static PrecedenceConstraint AddPrecedenceConstraint(Package pkg, Executable from, Executable to)
+        {
+            var constraint = pkg.PrecedenceConstraints.Add(from, to);
+            constraint.Value = DTSExecResult.Success;
+            return constraint;
+        }
+
         public static void SavePackage(Package pkg, string path)
         {
             var dir = System.IO.Path.GetDirectoryName(path);

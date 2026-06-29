@@ -30,9 +30,10 @@ namespace SsisOmHost.Patterns
             var src = PackageBuilder.AddOleDbConnection(pkg, sourceConnName, srcConn.Server, srcConn.Database);
             var tgt = PackageBuilder.AddOleDbConnection(pkg, targetConnName, tgtConn.Server, tgtConn.Database);
 
+            Executable truncateTask = null;
             if (truncate)
             {
-                PackageBuilder.AddExecuteSqlTask(pkg, "SQL Truncate Target", tgt,
+                truncateTask = PackageBuilder.AddExecuteSqlTask(pkg, "SQL Truncate Target", tgt,
                     "TRUNCATE TABLE " + targetTable + ";");
             }
 
@@ -60,7 +61,14 @@ namespace SsisOmHost.Patterns
                 .Append("INSERT INTO etl.PackageRun (PackageName, StartedAt, FinishedAt, Status, RowsLoaded) ")
                 .Append("VALUES (N'").Append(packageName).Append("', SYSUTCDATETIME(), SYSUTCDATETIME(), N'Succeeded', NULL);")
                 .ToString();
-            PackageBuilder.AddExecuteSqlTask(pkg, "SQL Insert PackageRun", tgt, runSql);
+            var logTask = PackageBuilder.AddExecuteSqlTask(pkg, "SQL Insert PackageRun", tgt, runSql);
+
+            // Wire precedence constraints (the green arrows in the designer).
+            if (truncateTask != null)
+            {
+                PackageBuilder.AddPrecedenceConstraint(pkg, truncateTask, df.TaskHost);
+            }
+            PackageBuilder.AddPrecedenceConstraint(pkg, df.TaskHost, logTask);
 
             PackageBuilder.SavePackage(pkg, outputPath);
         }

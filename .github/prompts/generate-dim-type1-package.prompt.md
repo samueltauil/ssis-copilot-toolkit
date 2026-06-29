@@ -16,7 +16,7 @@ Steps:
 1. Verify the source `stg.*` table exists (`mssql_list_tables`) and matches the dim's expected shape.
 2. Write `templates/metadata/<PackageName>.metadata.json` with `pattern: "type1-dim"`, `businessKey`, `surrogateKey`, `payloadColumns`, the columns array, and `protectionLevel: "DontSaveSensitive"`.
 3. Run `.\tools\New-SsisPackage.ps1 -Metadata <path>`.
-4. Run the delivery gate via `@ssis-validator` (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
+4. Run the delivery gate by invoking the **ssis-validator** agent (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)).
 5. Report.
 
 Refuse if the target schema is not `dim`. Refuse if `businessKey` and `surrogateKey` are the same column.

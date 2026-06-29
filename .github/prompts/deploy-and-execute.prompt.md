@@ -3,7 +3,7 @@ description: "Build the .ispac, deploy it to SSISDB, then execute one or more pa
 agent: ssis-author
 argument-hint: "Package name(s) to execute, or 'all' for every package in the project"
 ---
-> **ROADMAP — not yet runnable.** This prompt depends on `tools\Build-SsisIspac.ps1`, `tools\Publish-SsisIspac.ps1`, `tools\Start-SsisExecution.ps1`, and `tools\Verify-ClonedProject.ps1`, none of which ship in the current overlay. The prompt below documents the eventual contract. When invoked today, `@ssis-author` must refuse and tell the user that build/deploy/execute primitives are roadmap items.
+> **ROADMAP — not yet runnable.** This prompt depends on `tools\Build-SsisIspac.ps1`, `tools\Publish-SsisIspac.ps1`, `tools\Start-SsisExecution.ps1`, and `tools\Verify-ClonedProject.ps1`, none of which ship in the current overlay. The prompt below documents the eventual contract. When invoked today, the **ssis-author** agent must refuse and tell the user that build/deploy/execute primitives are roadmap items.
 
 End-to-end: build → deploy → execute → report.
 

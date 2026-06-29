@@ -38,7 +38,7 @@
     Non-interactive cleanup that also drops the warehouse database.
 
 .NOTES
-    Primitive script — does one thing. Called by @ssis-author when resetting the demo.
+    Primitive script — does one thing. Called by ssis-author when resetting the demo.
     Safe to run multiple times (idempotent).
 #>
 

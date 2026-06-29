@@ -2,7 +2,7 @@
 
 GitHub Copilot customizations (agents, skills, prompts, and PowerShell primitives) that let you author SQL Server Integration Services (SSIS) packages agentically from chat. The toolkit works in both **Visual Studio 2026 (18.4+)** and **VS Code** with GitHub Copilot Chat, and packages round-trip cleanly to the native SSIS designer that ships with Visual Studio.
 
-The custom agent `@ssis-author` writes structured metadata JSON, then calls a thin PowerShell layer that drives the same managed object model the SSIS designer uses internally (`Microsoft.SqlServer.Dts.Runtime`) to emit valid `.dtsx`. The agent never hand-edits the XML.
+The custom agent **ssis-author** writes structured metadata JSON, then calls a thin PowerShell layer that drives the same managed object model the SSIS designer uses internally (`Microsoft.SqlServer.Dts.Runtime`) to emit valid `.dtsx`. The agent never hand-edits the XML.
 
 ## Two ways to onboard
 
@@ -36,8 +36,9 @@ After either path:
 .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
 
 # 2. Open the repo in Visual Studio 2026 (18.4+) or VS Code, then in Copilot Chat:
-@ssis-author /generate-staging-package
-@ssis-author /generate-dim-type2-package
+# Select ssis-author from the agent picker, then run:
+/generate-staging-package
+/generate-dim-type2-package
 ```
 
 ## Using the toolkit from Copilot Chat
@@ -48,16 +49,16 @@ Everything is driven through two custom agents and a set of slash prompts you in
 
 | Agent | What it does | When to call it |
 |---|---|---|
-| `@ssis-author` | The only sanctioned entry point for SSIS work. Identifies which of the four supported patterns applies, writes metadata JSON, calls `tools/New-SsisPackage.ps1`, and spawns `@ssis-validator` at the end. Refuses to hand-edit `.dtsx`, to author packages outside the four patterns, or to skip the gate. | Any time you want to create, modify, deploy, or execute an SSIS package. |
-| `@ssis-validator` | Read-only delivery-gate runner. Takes a `.dtsx` plus its `.dtproj`, runs `Test-SsisPackage.ps1` and `Test-SsisDesignerLoad.ps1` in order, and returns a structured `VERDICT: PASS\|FAIL` block with per-step exit codes and the first failing step's diagnosis. Cannot edit, deploy, or execute. | Usually invoked automatically by `@ssis-author`. Call it directly if you want to re-validate a package on its own. |
+| **ssis-author** | The only sanctioned entry point for SSIS work. Identifies which of the four supported patterns applies, writes metadata JSON, calls `tools/New-SsisPackage.ps1`, and spawns **ssis-validator** at the end. Refuses to hand-edit `.dtsx`, to author packages outside the four patterns, or to skip the gate. | Any time you want to create, modify, deploy, or execute an SSIS package. Select this agent from the agent picker before running prompts. |
+| **ssis-validator** | Read-only delivery-gate runner. Takes a `.dtsx` plus its `.dtproj`, runs `Test-SsisPackage.ps1` and `Test-SsisDesignerLoad.ps1` in order, and returns a structured `VERDICT: PASS\|FAIL` block with per-step exit codes and the first failing step's diagnosis. Cannot edit, deploy, or execute. | Usually invoked automatically by **ssis-author**. Call it directly if you want to re-validate a package on its own. Select this agent from the agent picker first. |
 
-Direct example:
+Direct example (select **ssis-validator** from the agent picker first):
 
 ```text
-@ssis-validator validate templates/ssis-project/StageCustomer.dtsx in templates/ssis-project/DemoProject.dtproj
+validate templates/ssis-project/StageCustomer.dtsx in templates/ssis-project/DemoProject.dtproj
 ```
 
-### Slash prompts (invoke after `@ssis-author`)
+### Slash prompts (select **ssis-author** from the agent picker first)
 
 | Prompt | What it does |
 |---|---|
@@ -70,22 +71,22 @@ Direct example:
 | `/generate-package-docs` | Generates human-readable Markdown documentation for a `.dtsx` (control flow, data flow, parameters, connections, runbook). |
 | `/deploy-and-execute` | Builds the `.ispac`, deploys to SSISDB, then executes one or more packages and reports status. (Refuses today; depends on roadmap primitives.) |
 
-Example session in Copilot Chat:
+Example session in Copilot Chat (select **ssis-author** from the agent picker first):
 
 ```text
-@ssis-author /generate-staging-package
+/generate-staging-package
 > Load AdventureWorks2025 Sales.Customer into stg.Customer.
 
-@ssis-author /generate-dim-type2-package
+/generate-dim-type2-package
 > Build dim.Customer from stg.Customer keyed on CustomerID.
 
-@ssis-author /generate-validation-sql
+/generate-validation-sql
 > Validate the staging and dim packages we just built.
 ```
 
 ### PowerShell primitives (callable directly or via Ctrl+Shift+B)
 
-You normally never call these yourself; `@ssis-author` does. They are surfaced in `.vscode/tasks.json` for ad-hoc use.
+You normally never call these yourself; the **ssis-author** agent does. They are surfaced in `.vscode/tasks.json` for ad-hoc use.
 
 | Primitive | Purpose |
 |---|---|
@@ -103,7 +104,7 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 
 | Path | What |
 |---|---|
-| `.github/agents/` | `@ssis-author` (authoring), `@ssis-validator` (delivery gate) |
+| `.github/agents/` | **ssis-author** (authoring), **ssis-validator** (delivery gate) |
 | `.github/skills/` | 8 skills: `ssis-delivery-gate`, `ssis-package-patterns`, `dtexec-validation-triage`, `dtsx-xml-anatomy`, `ssis-clone-roundtrip`, `git-roundtrip-for-ssis`, `ssisdb-deployment`, `adventureworks-mapping` |
 | `.github/prompts/` | 8 `/`-invokable workflows: scaffold, generate-{staging,dim-type1,dim-type2,fact}, deploy-and-execute, generate-{validation-sql,package-docs} |
 | `.github/instructions/` | Per-file-pattern guidance (`.dtsx`, `.gitattributes`, metadata JSON, T-SQL, SSISDB) |
@@ -114,11 +115,11 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 | `tools/lib/SsisOmHost/` | .NET 8 console host that wraps `Microsoft.SqlServer.Dts.Runtime` (`Program.cs`, `PackageBuilder.cs`, `MetadataHelpers.cs`, per-pattern builders under `Patterns/`). Built once via `Build-SsisOmHost.ps1` |
 | `.vscode/tasks.json` | Surfaces the primitives as `Ctrl+Shift+B` build tasks |
 
-Roadmap (referenced by `@ssis-author`'s `deploy-and-execute` prompt, not yet shipped): `Build-SsisIspac.ps1`, `Publish-SsisIspac.ps1`, `Start-SsisExecution.ps1`, `Verify-ClonedProject.ps1`. The matching prompt refuses on invocation today.
+Roadmap (referenced by **ssis-author**'s `deploy-and-execute` prompt, not yet shipped): `Build-SsisIspac.ps1`, `Publish-SsisIspac.ps1`, `Start-SsisExecution.ps1`, `Verify-ClonedProject.ps1`. The matching prompt refuses on invocation today.
 
 ## The four supported package patterns
 
-`@ssis-author` only emits packages that match one of these four shapes. Anything else: the agent refuses and asks which pattern fits. The pattern recipes (the managed-OM call sequences) live in the [`ssis-package-patterns`](.github/skills/ssis-package-patterns/SKILL.md) skill; each pattern is implemented by a builder module under `tools\lib\patterns\`.
+The **ssis-author** agent only emits packages that match one of these four shapes. Anything else: the agent refuses and asks which pattern fits. The pattern recipes (the managed-OM call sequences) live in the [`ssis-package-patterns`](.github/skills/ssis-package-patterns/SKILL.md) skill; each pattern is implemented by a builder module under `tools\lib\patterns\`.
 
 | Pattern | When | Module |
 |---|---|---|
