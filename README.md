@@ -130,9 +130,20 @@ The **ssis-author** agent only emits packages that match one of these four shape
 
 ### Why these four
 
-The toolkit follows the **Kimball dimensional modeling methodology** — the approach most SQL Server data warehouses have used since the 1990s. Kimball's core idea is simple: structure your warehouse as a star schema (central fact tables surrounded by dimension tables), stage raw extracts before transforming them, and version dimension rows with surrogate keys so facts remain historically accurate. Ralph Kimball's *The Data Warehouse Toolkit* (Wiley, now in its 3rd edition) is the canonical reference; Microsoft's own Fabric and Power BI documentation cites it directly (see [References](#references) below).
+The toolkit follows the **Kimball dimensional modeling methodology** — the approach most SQL Server data warehouses have used since the 1990s. Kimball's core idea is simple: structure your warehouse as a star schema (central fact tables surrounded by dimension tables), stage raw extracts before transforming them, and version dimension rows with surrogate keys so facts remain historically accurate.
 
-These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn (staging, SCD Type 1, SCD Type 2, surrogate-key fact loads), not toolkit-invented shapes. See [Dimensional modeling and load patterns](#references) below for the per-topic links; each pattern subsection cites the most specific reference inline.
+**Core Kimball principles** implemented by this toolkit:
+
+- **Star schema design**: Facts at the center (measures + foreign keys), dimensions at the edges (descriptive attributes). No normalization across dimensions.
+- **Conformed dimensions**: Shared dimensions (Customer, Product, Date) with consistent keys across fact tables enable drill-across queries.
+- **Surrogate keys**: Integer keys assigned by the warehouse, decoupled from source-system natural keys. Protects facts from source-key changes and enables dimension versioning.
+- **Slowly Changing Dimensions (SCD)**: Type 1 (overwrite, no history), Type 2 (versioned rows with effective dates and current flag), Type 3 (limited history in separate columns — not implemented).
+- **Staging layer**: Land raw extracts in a `stg.*` schema before transformation. Makes ETL restartable, isolates source drift, and enables incremental loads.
+- **Bus architecture**: Enterprise data warehouse as a collection of conformed dimensions and incrementally-built fact tables, not a single monolithic schema.
+
+Ralph Kimball's *The Data Warehouse Toolkit* (Wiley, 3rd edition, 2013) is the canonical reference; Microsoft's own Fabric and Power BI documentation cites it directly (see [Kimball dimensional modeling methodology](#kimball-dimensional-modeling-methodology) in References below). The Kimball Group's [Dimensional Modeling Techniques](https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/) article consolidates the full pattern catalog.
+
+These are the load patterns of a Kimball-style dimensional warehouse, expressed in the smallest set that covers the lifecycle of a row from source system to fact table. Each one solves a different problem; together they cover the everyday ELT cases without overlap. The four pattern modules are direct implementations of patterns Microsoft documents on Learn (staging, SCD Type 1, SCD Type 2, surrogate-key fact loads), not toolkit-invented shapes. See [Dimensional modeling and load patterns](#dimensional-modeling-and-load-patterns) below for the per-topic links; each pattern subsection cites the most specific reference inline.
 
 #### Staging load: `Source → stg.*`
 
@@ -202,6 +213,15 @@ The toolkit's design decisions trace back to these Microsoft Learn topics. Use t
 - [`catalog.create_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-create-execution-ssisdb-database) + [`catalog.start_execution`](https://learn.microsoft.com/en-us/sql/integration-services/system-stored-procedures/catalog-start-execution-ssisdb-database): the canonical execution sequence for the roadmap `Start-SsisExecution.ps1` primitive.
 - [Access control for sensitive data in packages](https://learn.microsoft.com/en-us/sql/integration-services/security/access-control-for-sensitive-data-in-packages): `ProtectionLevel`. The toolkit pins every package and project to `DontSaveSensitive`.
 - [SSIS on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-migrate-ssis): the constraint that makes the toolkit Windows-only (no SSISDB on Linux; Project Deployment Model unsupported).
+
+**Kimball dimensional modeling methodology**
+
+The foundational methodology for enterprise data warehousing that this toolkit implements. The four patterns (staging, Type-1 dimension, Type-2 dimension, fact load) directly map to Kimball's ETL subsystems.
+
+- [The Kimball Group: Dimensional Modeling Techniques](https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/): comprehensive catalog of dimensional modeling patterns, including star schema, surrogate keys, conformed dimensions, SCD types, factless facts, and degenerate dimensions. The authoritative source from Ralph Kimball's consulting practice.
+- [The Kimball Group: Kimball DW/BI Lifecycle Methodology](https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dw-bi-lifecycle-method/): the full program planning and delivery framework that contextualizes dimensional modeling within business requirements definition, ETL design, and BI application deployment.
+- Ralph Kimball and Margy Ross, *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling*, 3rd Edition (Wiley, 2013). The canonical textbook. Chapters 1–3 establish star schema, SCD types, and surrogate keys; Chapter 19 covers ETL subsystems (the conceptual basis for the four pattern modules).
+- [Kimball Design Tips archive](https://www.kimballgroup.com/category/design-tip/): 20+ years of monthly design-tip articles covering edge cases (many-to-many bridge tables, multi-valued dimensions, handling late-arriving facts, snapshot fact tables, handling source key reuse).
 
 **Dimensional modeling and load patterns**
 
