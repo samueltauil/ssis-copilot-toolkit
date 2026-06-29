@@ -53,7 +53,9 @@ You see all of it in the chat transcript. The agent never edits the `.dtsx` dire
 
 ## Step 3. Cover the other three patterns
 
-The toolkit supports four patterns: staging, Type-1 dimension, Type-2 dimension, and fact. Each one solves a different problem in a Kimball-style warehouse. See [README §The four supported package patterns](README.md#the-four-supported-package-patterns) for why each exists and what shape it takes. Generate one of each from chat:
+The toolkit supports four patterns: staging, Type-1 dimension, Type-2 dimension, and fact. Each one solves a different problem in a Kimball-style warehouse. See [README §The four supported package patterns](README.md#the-four-supported-package-patterns) for why each exists and what shape it takes. 
+
+Select **ssis-author** from the agent picker, then type each of these:
 
 ```text
 /generate-dim-type1-package
@@ -76,11 +78,9 @@ Anything that does not fit the four patterns? The **ssis-author** agent refuses 
 
 ## Step 4. Modify a package without touching XML or PowerShell
 
-Describe the change:
+Select **ssis-author** from the agent picker, then describe the change:
 
 > change `Stg_Customer` so it does not truncate before load.
-
-(With **ssis-author** selected in the agent picker.)
 
 The agent will:
 
@@ -94,22 +94,21 @@ Same loop for "add the `ModifiedDate` column to the staging mapping", "switch th
 
 ## Step 5. Re-validate any package on demand
 
-If you want to confirm a package is still healthy (after a SQL schema change, after pulling someone else's branch, before a deployment), ask the validator directly:
+If you want to confirm a package is still healthy (after a SQL schema change, after pulling someone else's branch, before a deployment), select **ssis-validator** from the agent picker and type:
 
 ```text
 validate templates/ssis-project/Packages/Stg_Customer.dtsx
 ```
 
-(With **ssis-validator** selected in the agent picker.)
-
 The **ssis-validator** agent is read-only. It cannot author, deploy, or execute. It only runs the gate and returns the verdict. The full procedure it follows lives in the [`ssis-delivery-gate`](.github/skills/ssis-delivery-gate/SKILL.md) skill.
 
 ## Step 6. Generate validation SQL
 
-After the agent loads a staging or dimension package, you usually want to prove the rows landed in the right shape. Ask:
+After the agent loads a staging or dimension package, you usually want to prove the rows landed in the right shape.
+
+Select **ssis-author** from the agent picker, then type:
 
 ```text
-Select **ssis-author** from the agent picker, then type:
 /generate-validation-sql
 > Validation queries for the staging and Type-2 dimension packages we just built.
 ```
@@ -118,8 +117,9 @@ The **ssis-author** agent emits T-SQL under `templates/sql/validation/`: row cou
 
 ## Step 7. Generate human-readable docs for a package
 
-```text
 Select **ssis-author** from the agent picker, then type:
+
+```text
 /generate-package-docs
 > Document templates/ssis-project/Packages/Stg_Customer.dtsx.
 ```
@@ -128,13 +128,13 @@ The agent reads the package via the managed OM and writes a Markdown file under 
 
 ## Step 8. Open a generated package in the SSIS designer
 
-First, generate the Visual Studio project file and connection managers:
+First, generate the Visual Studio project file and connection managers.
+
+Select **ssis-author** from the agent picker, then type:
 
 ```text
 Run .\tools\New-SsisProject.ps1 to generate the .dtproj, connection managers, and project parameters.
 ```
-
-(With **ssis-author** selected.)
 
 Or run it directly:
 
