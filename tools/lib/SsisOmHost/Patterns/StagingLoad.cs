@@ -3,6 +3,8 @@
 
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
 
 namespace SsisOmHost.Patterns
 {

@@ -58,6 +58,11 @@ The toolkit supports four patterns: staging, Type-1 dimension, Type-2 dimension,
 Select **ssis-author** from the agent picker, then type each of these:
 
 ```text
+/generate-staging-package
+> Load AdventureWorks2025 Sales.SalesOrderHeader into stg.SalesOrderHeader in CopilotSSIS_Warehouse.
+```
+
+```text
 /generate-dim-type1-package
 > Build dim.Customer from stg.Customer keyed on CustomerID, overwrite on key match.
 ```
@@ -71,6 +76,8 @@ Select **ssis-author** from the agent picker, then type each of these:
 /generate-fact-package
 > Build fact.SalesOrder from stg.SalesOrderHeader. Look up CustomerKey from dim.Customer on CustomerID and DateKey from dim.Date on OrderDate.
 ```
+
+**Package dependency note:** The fact.SalesOrder package reads from `stg.SalesOrderHeader`, which is populated by the Stg_SalesOrderHeader staging package above. Execute packages in this order: Stg_Customer → Stg_SalesOrderHeader → Dim_Customer_Type1 → Fact_SalesOrder.
 
 Each prompt walks the same loop: gather metadata → write JSON → generate `.dtsx` → run the gate → report. Each ends with a `VERDICT: PASS` block before the agent says "done".
 
@@ -105,13 +112,6 @@ The **ssis-validator** agent is read-only. It cannot author, deploy, or execute.
 ## Step 6. Generate validation SQL
 
 After the agent loads a staging or dimension package, you usually want to prove the rows landed in the right shape.
-
-Select **ssis-author** from the agent picker, then type:
-
-```text
-/generate-validation-sql
-> Validation queries for the staging and Type-2 dimension packages we just built.
-```
 
 The **ssis-author** agent emits T-SQL under `templates/sql/validation/`: row counts, key uniqueness checks, SCD-2 invariants (exactly one current row per business key, no overlapping effective dates), and source-to-target reconciliations. Run them in SSMS or with the `mssql` extension.
 

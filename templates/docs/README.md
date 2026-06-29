@@ -7,18 +7,19 @@ Per-package documentation for the SSIS Copilot Toolkit demo packages. Each docum
 ### Staging Packages
 
 - **[Stg_Customer.md](Stg_Customer.md)** — Load AdventureWorks2025 `Sales.Customer` (+ person details) into `stg.Customer`. Append mode, no truncation.
+- **Stg_SalesOrderHeader** _(Not yet documented)_ — Load AdventureWorks2025 `Sales.SalesOrderHeader` into `stg.SalesOrderHeader`. Required before fact.SalesOrder.
 
 ### Type-1 Dimension Packages
 
-_(None documented yet)_
+- **Dim_Customer_Type1** _(Not yet documented)_ — Build `dim.Customer` from `stg.Customer`, overwrite on key match.
 
 ### Type-2 Dimension Packages (SCD-2)
 
-_(None documented yet)_
+- **Dim_CustomerHistory_Type2** _(Not yet documented)_ — Build `dim.CustomerHistory` from `stg.Customer` with history tracking.
 
 ### Fact Packages
 
-_(None documented yet)_
+- **Fact_SalesOrder** _(Not yet documented)_ — Build `fact.SalesOrder` from `stg.SalesOrderHeader` with dimension lookups.
 
 ## How to Generate Documentation
 

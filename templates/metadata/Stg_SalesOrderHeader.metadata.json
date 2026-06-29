@@ -1,0 +1,30 @@
+{
+    "$schema": "https://json.schemastore.org/dtsx-metadata.json",
+    "pattern": "staging",
+    "packageName": "Stg_SalesOrderHeader",
+    "description": "Load Sales.SalesOrderHeader from AdventureWorks2025 into stg.SalesOrderHeader in CopilotSSIS_Warehouse.",
+    "sourceConnection": "Source",
+    "targetConnection": "Warehouse",
+    "source": {
+        "server": ".\\SQL2025",
+        "database": "AdventureWorks2025",
+        "schema": "Sales",
+        "table": "SalesOrderHeader"
+    },
+    "target": {
+        "server": ".\\SQL2025",
+        "database": "CopilotSSIS_Warehouse",
+        "schema": "stg",
+        "table": "SalesOrderHeader"
+    },
+    "sourceQuery": "SELECT SalesOrderID, OrderDate, CustomerID, SubTotal FROM Sales.SalesOrderHeader;",
+    "targetTable": "stg.SalesOrderHeader",
+    "columns": [
+        { "source": "SalesOrderID", "target": "SalesOrderID", "dataType": "int" },
+        { "source": "OrderDate",    "target": "OrderDate",    "dataType": "datetime2(3)" },
+        { "source": "CustomerID",   "target": "CustomerID",   "dataType": "int" },
+        { "source": "SubTotal",     "target": "SubTotal",     "dataType": "decimal(19, 4)" }
+    ],
+    "truncateBeforeLoad": true,
+    "protectionLevel": "DontSaveSensitive"
+}
