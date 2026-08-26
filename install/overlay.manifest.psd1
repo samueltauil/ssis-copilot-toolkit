@@ -78,10 +78,13 @@
         # Demo script — specific to building this toolkit, not consuming it
         @{ Path = 'context' }
 
-        # README is template-only; brownfield repos keep their own README.
+        # README and GUIDE are template-only; brownfield repos keep their own README.
         # The installer appends a section to the target's AGENTS.md instead.
         # The template-cleanup workflow generates a fresh brownfield-style README.
+        # GUIDE.md walks through the AdventureWorks demo, so it is meaningless once
+        # the demo content is stripped.
         @{ Path = 'README.md' }
+        @{ Path = 'GUIDE.md' }
 
         # Greenfield first-push workflow — strips this Demo list, then deletes itself.
         # Must be in Demo (not Overlay) so the brownfield installer never copies it.

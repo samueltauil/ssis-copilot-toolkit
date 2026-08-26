@@ -4,31 +4,46 @@ Everything below happens **in GitHub Copilot Chat**. You will not write PowerShe
 
 If you only want to read the architecture, start at [AGENTS.md](AGENTS.md).
 
-## What you need
+## Prerequisites
 
-- **Windows** with PowerShell 7+, **.NET 8 SDK**, and **SQL Server 2022 or 2025 client tools** (for `dtexec.exe` and the managed OM).
-- **SQL Server 2025 Developer Edition** on `.\SQL2025` with **AdventureWorks2025** attached. (Different instance? Tell the agent in chat and it will adjust the metadata.)
+This guide runs the **demo** against AdventureWorks2025. Full details and verification commands are in the [README Prerequisites section](README.md#prerequisites); the short version:
+
+**Toolchain (needed for any scenario)**
+
+- **Windows** with **PowerShell 7+** (Windows PowerShell 5.1 also works).
+- **.NET Framework 4.x** — its `csc.exe` compiles the managed-OM host. No .NET SDK required.
+- **SQL Server 2025 Integration Services (shared components)** — provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough; select **Integration Services** in the installer.
 - **GitHub Copilot Chat** in Visual Studio 2026 (18.4+) or VS Code (Stable or Insiders).
 
-Clone the repo (or click **"Use this template"**) and open the folder in your IDE:
+**Demo-only, on top of the above**
+
+- A **SQL Server instance**. This repo's `.ssis-toolkit.json` assumes `.\SQL2025` — using something else? Edit that file and the `source` / `target` blocks in `templates/metadata/*.json`, or just tell the agent in chat and it will adjust them.
+- The **`SqlServer` PowerShell module**: `Install-Module SqlServer -Scope CurrentUser`.
+- **AdventureWorks2025** restored on that instance ([download and restore instructions](https://learn.microsoft.com/sql/samples/adventureworks-install-configure)). The installer verifies it is present but will not restore it for you.
+- **SSISDB** only if you intend to deploy. Create it via SSMS → **Integration Services Catalogs** → **Create Catalog**. The validation gate in this guide does not need it.
+
+Clone the repo and open the folder in your IDE:
 
 ```powershell
 git clone https://github.com/samueltauil/ssis-copilot-toolkit.git
+cd ssis-copilot-toolkit
 ```
 
 Open the Copilot Chat panel. You are ready.
+
+> Not running the demo? Starting a new repo or adding the toolkit to an existing one are covered in the README's [Greenfield](README.md#greenfield-new-repo-from-the-template) and [Brownfield](README.md#brownfield-existing-ssis-repo) sections, then [Bring your own databases](docs/bring-your-own-databases.md).
 
 ---
 
 ## Step 1. One-time prep (ask Copilot to do it)
 
-Two things have to happen once per machine before the agent can author packages: build the .NET host that wraps the SSIS managed object model, and create the demo databases the example metadata points at.
+Two things have to happen once per machine before the agent can author packages: compile the host that wraps the SSIS managed object model, and create the demo databases the example metadata points at.
 
 In Copilot Chat, ask:
 
 > Run `.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1` to build the managed-OM host, then run `.\install\Install-Toolkit.ps1` to provision the demo databases.
 
-Copilot will surface both commands for your approval, run them in the integrated terminal, and report back. You should see `SsisOmHost.exe` produced and the databases `CopilotSSIS_Source` and `CopilotSSIS_Warehouse` created with the `stg` / `dim` / `fact` / `etl` schemas applied.
+Copilot will surface both commands for your approval, run them in the integrated terminal, and report back. You should see `OK: ...\SsisOmHost.exe` and the databases `CopilotSSIS_Source` and `CopilotSSIS_Warehouse` created with the `stg` / `dim` / `fact` / `etl` schemas applied.
 
 (Prefer to run them yourself? Both are documented in the [README primitives table](README.md#powershell-primitives-callable-directly-or-via-ctrlshiftb).)
 
@@ -168,6 +183,6 @@ When those land, the chat experience is the same shape: a single prompt, the age
 ## What's next
 
 - **Clean up and start fresh.** Run `.\tools\Remove-DemoAssets.ps1` to remove all generated packages, project files, SSISDB content, and built artifacts. Add `-DropWarehouse` to also drop the demo database. Idempotent and safe to repeat.
-- **Drop the toolkit into your existing SSIS repo.** One-liner in the [README brownfield section](README.md#2-existing-ssis-repo-drop-in-the-overlay). The demo content used in this guide is **not** copied; your repo keeps its own data model. Run `/scaffold-new-ssis-project` once to write `.ssis-toolkit.json`, then the same chat-first workflow above works against your tables. Full walkthrough: [Bring your own databases](docs/bring-your-own-databases.md).
+- **Drop the toolkit into your existing SSIS repo.** One-liner in the [README brownfield section](README.md#brownfield-existing-ssis-repo). The demo content used in this guide is **not** copied; your repo keeps its own data model. Run `/scaffold-new-ssis-project` once to write `.ssis-toolkit.json`, then the same chat-first workflow above works against your tables. Full walkthrough: [Bring your own databases](docs/bring-your-own-databases.md).
 - **Add a fifth pattern.** Write a module under `tools\lib\patterns\`, extend the dispatcher in `tools\lib\SsisOm.psm1`, document the metadata fields in [.github/instructions/metadata-schema.instructions.md](.github/instructions/metadata-schema.instructions.md), and add a slash prompt under [.github/prompts/](.github/prompts/). The **ssis-author** agent picks it up automatically.
 - **Read the contract.** [AGENTS.md](AGENTS.md) covers the hard rules, the two-layer architecture (PowerShell primitives + skills/agents), and what NOT to invent.

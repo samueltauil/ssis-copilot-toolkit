@@ -12,7 +12,7 @@ Distributed two ways from a single source tree, both driven by the manifest:
 - **Template repo** — "Use this template" on GitHub. First push triggers [.github/workflows/template-cleanup.yml](.github/workflows/template-cleanup.yml), which reads the manifest, strips the `Demo` list, and regenerates `AGENTS.md` + `README.md` for the new repo.
 - **Brownfield installer** — `iex (irm .../install/Add-CopilotSsisToolkit.ps1)`. Drops the manifest's `Overlay` list into an existing SSIS repo, idempotent on re-runs.
 
-Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-ssis-demo-plan.md). Microsoft Learn references for the SSIS foundations (managed OM, `dtexec`, SSISDB, ProtectionLevel) live in the [README References section](README.md#references).
+Prerequisites, and the greenfield / brownfield / demo onboarding paths, are documented in the [README](README.md#prerequisites). Microsoft Learn references for the SSIS foundations (managed OM, `dtexec`, SSISDB, ProtectionLevel) live in the [README References section](README.md#references).
 
 ## Hard rules
 
@@ -105,6 +105,7 @@ The **ssis-author** agent only emits packages that match one of these. Anything 
 - **SQL Server**: `.\SQL2025` (SQL Server 2025 Developer Edition) with AdventureWorks2025 attached.
 - **IDE**: either **Visual Studio 2026 (18.4+)** (native SSIS designer; native Copilot Chat with agent-customization parity) or **VS Code** Stable/Insiders with GitHub Copilot Chat. Customization files under `.github/` use only VS Code's documented portable schema (capability aliases — `read`, `edit`, `search`, `execute`, `todo` — in agent frontmatter) so both IDEs honor them.
 - **PowerShell**: 7+ (`pwsh`) preferred; Windows PowerShell 5.1 acceptable for `Microsoft.SqlServer.ManagedDTS.dll` interop.
-- **.NET 8 SDK**: required by [tools/lib/SsisOmHost/Build-SsisOmHost.ps1](tools/lib/SsisOmHost/Build-SsisOmHost.ps1).
+- **.NET Framework 4.x**: [tools/lib/SsisOmHost/Build-SsisOmHost.ps1](tools/lib/SsisOmHost/Build-SsisOmHost.ps1) compiles the host with `csc.exe` from `Framework64\v4.0.30319`. No .NET SDK is required.
+- **SQL Server 2025 Integration Services (shared components)**: the build binds to the GAC assemblies at `v4.0_17.0.0.0`, so SQL Server 2022 (v16) does not satisfy it.
 - **Recommended VS Code extensions**: [.vscode/extensions.json](.vscode/extensions.json).
 - **Containers**: SSIS execution is Windows-only — the managed OM (`Microsoft.SqlServer.Dts.Runtime`), `dtexec`, and `dtutil` ship with the SQL Server client tools and have no Linux equivalent. All workflow runners use `windows-latest`.

@@ -2,7 +2,27 @@
 
 The toolkit ships with an AdventureWorks2025 walkthrough, but nothing in the engine depends on it. This page shows how to point the toolkit at your own source system and warehouse.
 
-If you installed the [brownfield overlay](../README.md#2-existing-ssis-repo-drop-in-the-overlay) into an existing SSIS repo, none of the demo content came with it — you already have a clean slate.
+If you installed the [brownfield overlay](../README.md#brownfield-existing-ssis-repo) into an existing SSIS repo, none of the demo content came with it — you already have a clean slate.
+
+## Prerequisites
+
+Before the first `/generate-*-package` prompt:
+
+| Requirement | Notes |
+|---|---|
+| **Windows** + **PowerShell 7+** | Windows PowerShell 5.1 also works. |
+| **.NET Framework 4.x** | Its `csc.exe` compiles the managed-OM host. No .NET SDK required. |
+| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough — select Integration Services in the installer. |
+| **GitHub Copilot Chat** | Visual Studio 2026 (18.4+) or VS Code. |
+| **Network access** to your source and warehouse servers | The agent queries `INFORMATION_SCHEMA.COLUMNS` to resolve column names, and `dtexec /Validate` connects to both sides. |
+
+Compile the host once per machine:
+
+```powershell
+.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
+```
+
+You do **not** need AdventureWorks, the `SqlServer` PowerShell module, or `Install-Toolkit.ps1` — those are demo-only.
 
 ## 1. Configure the repo
 
