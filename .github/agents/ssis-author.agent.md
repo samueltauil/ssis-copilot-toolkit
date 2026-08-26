@@ -8,6 +8,7 @@ tools:
   - search
   - execute
   - todo
+  - agent
   - microsoft-docs/*
   - mssql_connect
   - mssql_list_databases
