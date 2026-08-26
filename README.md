@@ -113,13 +113,31 @@ iex (irm https://raw.githubusercontent.com/samueltauil/ssis-copilot-toolkit/main
 
 What the installer does:
 
-1. Downloads [overlay.manifest.psd1](install/overlay.manifest.psd1) (the single source of truth for what ships) and [Add-CopilotSsisToolkit.ps1](install/Add-CopilotSsisToolkit.ps1).
+1. Downloads the toolkit source archive for the pinned branch and reads [overlay.manifest.psd1](install/overlay.manifest.psd1), the single source of truth for what ships. If you already have the toolkit cloned, run `install\Add-CopilotSsisToolkit.ps1` from that clone instead and nothing is downloaded.
 2. Copies the **overlay** into your tree: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, `.ssis-toolkit.example.json`, and `docs/bring-your-own-databases.md`. See [What ships in the overlay](#what-ships-in-the-overlay) for the complete list.
 3. **Skips** any file that already exists in your repo (default `-Mode Skip`). Pass `-Mode Overwrite` to force-update every overlay file.
 4. Appends a **managed block** to your `AGENTS.md` and `.gitignore` — a region fenced by `<!-- BEGIN: ssis-copilot-toolkit ... -->` / `<!-- END: ssis-copilot-toolkit -->` markers (and the `#` equivalents in `.gitignore`). On re-run it replaces only what is between those markers, leaving the rest of the file untouched. If your repo has neither file yet, the script creates it. These two are managed this way regardless of `-Mode`.
 5. **Does not copy** any demo content (the manifest's `Demo` list): `templates/`, `install/Install-Toolkit.ps1`, `tools/Remove-DemoAssets.ps1`, this `README.md`, `GUIDE.md`, or the workflows. Your repo keeps its own data model.
 
 Re-running the one-liner is safe and idempotent.
+
+`iex` gives you no way to pass parameters, so the one-liner reads these environment variables instead:
+
+| Variable | Equivalent parameter | Default |
+|---|---|---|
+| `SSIS_TOOLKIT_REPO_PATH` | `-RepoPath` | current directory |
+| `SSIS_TOOLKIT_MODE` | `-Mode` | `Skip` |
+| `SSIS_TOOLKIT_SOURCE_REPO` | `-SourceRepo` | `samueltauil/ssis-copilot-toolkit` |
+| `SSIS_TOOLKIT_SOURCE_REF` | `-SourceRef` | `main` |
+| `SSIS_TOOLKIT_SOURCE_PATH` | `-SourcePath` | none (downloads the archive) |
+
+```powershell
+# Example: refresh every overlay file to the latest version
+$env:SSIS_TOOLKIT_MODE = 'Overwrite'
+iex (irm https://raw.githubusercontent.com/samueltauil/ssis-copilot-toolkit/main/install/Add-CopilotSsisToolkit.ps1)
+```
+
+Works under both Windows PowerShell 5.1 and PowerShell 7. [install/Test-InstallerBootstrap.ps1](install/Test-InstallerBootstrap.ps1) enforces that in CI.
 
 Then:
 

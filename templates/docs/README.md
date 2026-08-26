@@ -6,7 +6,7 @@ Per-package documentation for the SSIS Copilot Toolkit demo packages. Each docum
 
 ### Staging Packages
 
-- **[Stg_Customer.md](Stg_Customer.md)** — Load AdventureWorks2025 `Sales.Customer` (+ person details) into `stg.Customer`. Append mode, no truncation.
+- **[Stg_Customer.md](Stg_Customer.md)** — Load AdventureWorks2025 `Sales.Customer` (+ person and email details) into `stg.Customer`. Full refresh — truncates before load.
 - **Stg_SalesOrderHeader** _(Not yet documented)_ — Load AdventureWorks2025 `Sales.SalesOrderHeader` into `stg.SalesOrderHeader`. Required before fact.SalesOrder.
 
 ### Type-1 Dimension Packages
@@ -23,7 +23,7 @@ Per-package documentation for the SSIS Copilot Toolkit demo packages. Each docum
 
 ## How to Generate Documentation
 
-For any package in [../ssis-project/Packages/](../ssis-project/Packages/), select **ssis-author** from the agent picker, then:
+For any package in [../ssis-project/](../ssis-project/), select **ssis-author** from the agent picker, then:
 
 ```
 /generate-package-docs <PackageName>

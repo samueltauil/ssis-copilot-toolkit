@@ -4,8 +4,13 @@ name: Overlay portability lint
 # nothing that assumes the AdventureWorks2025 demo environment or this repo's
 # templates/ folder layout, or the "drop it into your own repo" story breaks.
 #
-# The scan logic lives in install/Test-OverlayPortability.ps1 so contributors can
-# run the same check locally before opening a PR.
+# The brownfield installer has a second, unrelated portability problem: it is the
+# one file that runs before anything else exists on the target machine, so it has
+# to bootstrap under both Windows PowerShell 5.1 and pwsh 7, as a .ps1 and via
+# `iex (irm ...)`. That is checked on a Windows runner.
+#
+# Both scans live under install/ so contributors can run them locally before
+# opening a PR.
 
 on:
   push:
@@ -25,3 +30,12 @@ jobs:
       - name: Scan overlay files for demo-environment coupling
         shell: pwsh
         run: ./install/Test-OverlayPortability.ps1
+
+  installer-bootstrap:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the brownfield installer bootstraps in every supported host
+        shell: pwsh
+        run: ./install/Test-InstallerBootstrap.ps1

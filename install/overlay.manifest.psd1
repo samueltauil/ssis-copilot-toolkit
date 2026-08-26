@@ -90,10 +90,12 @@
         # Must be in Demo (not Overlay) so the brownfield installer never copies it.
         @{ Path = '.github/workflows/template-cleanup.yml' }
 
-        # Toolkit-engineering guard. Reads this manifest, so it is meaningless once
-        # the manifest is gone.
+        # Toolkit-engineering guards. They read this manifest or test the installer
+        # itself, and the workflow that runs them is stripped above, so they are
+        # meaningless once the manifest is gone.
         @{ Path = '.github/workflows/overlay-portability-lint.yml' }
         @{ Path = 'install/Test-OverlayPortability.ps1' }
+        @{ Path = 'install/Test-InstallerBootstrap.ps1' }
     )
 
     # Files that must never ship in either mode. Listed here so a "release lint"
