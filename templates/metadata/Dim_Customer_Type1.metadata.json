@@ -3,8 +3,8 @@
     "pattern": "type1-dim",
     "packageName": "Dim_Customer_Type1",
     "description": "Overwrite-on-match (SCD-1) load from stg.Customer into dim.Customer.",
-    "sourceConnection": "Warehouse",
-    "targetConnection": "Warehouse",
+    "sourceConnection": "CopilotSSIS_Warehouse",
+    "targetConnection": "CopilotSSIS_Warehouse",
     "source": {
         "server": ".\\SQL2025",
         "database": "CopilotSSIS_Warehouse",

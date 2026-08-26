@@ -31,7 +31,70 @@ SELECT TOP 5 * FROM Person.Person WHERE BusinessEntityID IN (SELECT PersonID FRO
 
 If a referenced table is missing, **refuse and surface the gap to the user** — do not invent column names.
 
+## Scope and limits
+
+This skill pins **column names**. It does **not** pin data types, and it does not cover every
+table a package might read. Two rules follow from that:
+
+1. **Always resolve data types from `INFORMATION_SCHEMA.COLUMNS`**, for both source and target.
+   Several AW source types differ from their staging counterparts (see the table below).
+2. **If a table you need is not listed here, resolve it from `INFORMATION_SCHEMA.COLUMNS`** —
+   that is expected, not a failure. Only refuse when the table cannot be confirmed at all.
+
+### Known source → staging type differences
+
+These are the conversions the demo packages must make explicit with `CAST` in `sourceQuery`.
+An implicit conversion here is a common cause of `0xC02020F6` at run time, which
+`dtexec /Validate` does **not** catch.
+
+| Column | AW source type | Staging target type | Required cast |
+|---|---|---|---|
+| `Sales.Customer.AccountNumber` | `varchar(10)` | `nvarchar(10)` | `CAST(c.AccountNumber AS nvarchar(10))` |
+| `Sales.SalesOrderHeader.OrderDate` | `datetime` | `datetime2(3)` | `CAST(OrderDate AS datetime2(3))` |
+| `Sales.SalesOrderHeader.SubTotal` | `money` | `decimal(19,4)` | `CAST(SubTotal AS decimal(19,4))` |
+
+Verify the rewritten query resolves to the target types before generating:
+
+```sql
+SELECT name, system_type_name
+FROM sys.dm_exec_describe_first_result_set(N'<your sourceQuery>', NULL, 0);
+```
+
 ## Canonical mappings (demo Phase 1–7)
+
+### stg.Customer (staging)
+
+Loaded by `Stg_Customer`. Target columns: `CustomerID`, `FirstName`, `LastName`,
+`EmailAddress`, `StoreID`, `TerritoryID`, `AccountNumber`, plus the audit columns
+`LoadedAt` and `LoadedByPackageRunId` (populated by the warehouse, not the package).
+
+**Source SELECT** — note the `AccountNumber` cast:
+```sql
+SELECT  c.CustomerID,
+        p.FirstName,
+        p.LastName,
+        e.EmailAddress,
+        c.StoreID,
+        c.TerritoryID,
+        CAST(c.AccountNumber AS nvarchar(10)) AS AccountNumber
+FROM    Sales.Customer c
+LEFT JOIN Person.Person p       ON p.BusinessEntityID = c.PersonID
+LEFT JOIN Person.EmailAddress e ON e.BusinessEntityID = c.PersonID;
+```
+
+### stg.SalesOrderHeader (staging)
+
+Loaded by `Stg_SalesOrderHeader`. Target columns: `SalesOrderID`, `OrderDate`,
+`CustomerID`, `SubTotal`, plus `LoadedAt` and `LoadedByPackageRunId`.
+
+**Source SELECT** — both `OrderDate` and `SubTotal` need casts:
+```sql
+SELECT  SalesOrderID,
+        CAST(OrderDate AS datetime2(3)) AS OrderDate,
+        CustomerID,
+        CAST(SubTotal AS decimal(19, 4)) AS SubTotal
+FROM    Sales.SalesOrderHeader;
+```
 
 ### dim.Customer (SCD-2)
 

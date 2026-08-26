@@ -3,8 +3,8 @@
     "pattern": "staging",
     "packageName": "Stg_Customer",
     "description": "Load Sales.Customer + Person.Person + Person.EmailAddress from AdventureWorks2025 into stg.Customer in CopilotSSIS_Warehouse.",
-    "sourceConnection": "Source",
-    "targetConnection": "Warehouse",
+    "sourceConnection": "AdventureWorks2025",
+    "targetConnection": "CopilotSSIS_Warehouse",
     "source": {
         "server": ".\\SQL2025",
         "database": "AdventureWorks2025",

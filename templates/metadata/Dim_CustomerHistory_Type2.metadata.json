@@ -3,8 +3,8 @@
     "pattern": "type2-dim",
     "packageName": "Dim_CustomerHistory_Type2",
     "description": "SCD-2 (history-tracking) load from stg.Customer into dim.CustomerHistory.",
-    "sourceConnection": "Warehouse",
-    "targetConnection": "Warehouse",
+    "sourceConnection": "CopilotSSIS_Warehouse",
+    "targetConnection": "CopilotSSIS_Warehouse",
     "source": {
         "server": ".\\SQL2025",
         "database": "CopilotSSIS_Warehouse",

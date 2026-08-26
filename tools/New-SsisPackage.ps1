@@ -66,14 +66,38 @@ if (-not (Test-Path -LiteralPath $exePath)) {
     throw "Helper exe not found: $exePath. Re-run without -SkipBuild."
 }
 
+$meta = Get-Content -LiteralPath $Metadata -Raw | ConvertFrom-Json
+$metaFields = @($meta.PSObject.Properties.Name)
+
+Import-Module (Join-Path $PSScriptRoot 'lib\ToolkitConfig.psm1') -Force
+$config = Get-SsisToolkitConfig -StartPath $repoRoot
+
+# A package that names a connection manager the project does not define still generates
+# and still passes dtexec /Validate - it fails later, at bind time. Catch it here.
+$knownConnections = @()
+if ($config -is [hashtable] -and $config.ContainsKey('connections') -and $config['connections'] -is [hashtable]) {
+    foreach ($role in @('source', 'target')) {
+        $block = $config['connections'][$role]
+        if ($block -is [hashtable] -and $block.ContainsKey('name') -and $block['name']) {
+            $knownConnections += [string]$block['name']
+        }
+    }
+}
+if ($knownConnections.Count -gt 0) {
+    foreach ($field in @('sourceConnection', 'targetConnection')) {
+        if ($metaFields -notcontains $field) { continue }
+        $value = $meta.$field
+        if ($value -and ($knownConnections -notcontains $value)) {
+            throw ("metadata.{0} is '{1}', which is not a connection manager defined in .ssis-toolkit.json (valid: {2}). Fix the metadata JSON or the config - never edit the .dtsx." -f $field, $value, ($knownConnections -join ', '))
+        }
+    }
+}
+
 if (-not $OutputPath) {
     # Flat structure: packages sit alongside the .dtproj in the configured project folder.
-    $meta = Get-Content -LiteralPath $Metadata -Raw | ConvertFrom-Json
-    if (-not $meta.packageName) {
+    if ($metaFields -notcontains 'packageName' -or -not $meta.packageName) {
         throw "metadata.packageName missing - cannot infer OutputPath."
     }
-    Import-Module (Join-Path $PSScriptRoot 'lib\ToolkitConfig.psm1') -Force
-    $config = Get-SsisToolkitConfig -StartPath $repoRoot
     $pkgDir = Resolve-SsisToolkitPath -Config $config -Key 'projectPath'
     if (-not (Test-Path -LiteralPath $pkgDir)) {
         New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
@@ -99,3 +123,14 @@ if ($exit -ne 0) {
 }
 
 Write-Host ("Generated -> {0}" -f $absOutput) -ForegroundColor Green
+
+# The .dtproj registers packages at project-generation time, so a newly added package is
+# absent until New-SsisProject.ps1 re-runs. Silent otherwise, and the gate blames the package.
+$projDir = [System.IO.Path]::GetDirectoryName($absOutput)
+$dtproj = Get-ChildItem -LiteralPath $projDir -Filter '*.dtproj' -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($dtproj) {
+    $pkgFile = [System.IO.Path]::GetFileName($absOutput)
+    if ((Get-Content -LiteralPath $dtproj.FullName -Raw) -notmatch [regex]::Escape($pkgFile)) {
+        Write-Warning ("{0} does not yet register {1}. Run tools\New-SsisProject.ps1 before validating." -f $dtproj.Name, $pkgFile)
+    }
+}

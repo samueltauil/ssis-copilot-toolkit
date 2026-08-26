@@ -50,6 +50,29 @@ Metadata files live under the `metadataPath` configured in `.ssis-toolkit.json`.
 
 `connections: { source: {...}, target: {...} }` is accepted as an alternative to the `source` / `target` blocks for server and database.
 
+## Connection names are validated
+
+`sourceConnection` and `targetConnection` must each be one of the connection-manager names
+defined in `.ssis-toolkit.json` (`connections.source.name` / `connections.target.name`).
+`tools/New-SsisPackage.ps1` rejects anything else before the generator runs.
+
+Either role may use either name — a Type-1, Type-2, or fact package normally reads `stg.*`
+and writes `dim.*`/`fact.*` on the **same** warehouse connection, so both fields hold the
+target connection name.
+
+This guard exists because a package naming a connection manager the project does not define
+still generates and still passes `dtexec /Validate`; it fails later, when the project tries
+to bind it.
+
+## Data types must match the target column
+
+`columns[].dataType` describes the column as the destination expects it. When the source
+column's type differs, make the conversion explicit with a `CAST` in `sourceQuery` rather
+than relying on SSIS to convert implicitly — implicit conversions surface as `0xC02020F6`
+at run time, which validation does not catch. Resolve both sides from
+`INFORMATION_SCHEMA.COLUMNS` and confirm the result with
+`sys.dm_exec_describe_first_result_set`.
+
 ## Pattern-specific fields
 
 ### `pattern: "staging"`

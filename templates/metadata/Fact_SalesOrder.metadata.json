@@ -3,8 +3,8 @@
     "pattern": "fact",
     "packageName": "Fact_SalesOrder",
     "description": "Resolve dim.Customer surrogate key via Lookup, then load into fact.SalesOrder.",
-    "sourceConnection": "Warehouse",
-    "targetConnection": "Warehouse",
+    "sourceConnection": "CopilotSSIS_Warehouse",
+    "targetConnection": "CopilotSSIS_Warehouse",
     "source": {
         "server": ".\\SQL2025",
         "database": "CopilotSSIS_Warehouse",
