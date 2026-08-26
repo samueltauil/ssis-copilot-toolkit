@@ -133,17 +133,29 @@ function Resolve-DimConnection {
     param([hashtable]$Metadata, [ValidateSet('source','target')][string]$Role)
     if ($Metadata.ContainsKey('connections') -and $Metadata['connections'].ContainsKey($Role)) {
         $c = [hashtable]$Metadata['connections'][$Role]
-        return [PSCustomObject]@{ Server = $c['server']; Database = $c['database'] }
-    }
-    $key = $Role
-    if ($Metadata.ContainsKey($key)) {
-        $b = [hashtable]$Metadata[$key]
         return [PSCustomObject]@{
-            Server   = $(if ($b.ContainsKey('server')) { $b['server'] } else { '.\SQL2025' })
-            Database = $(if ($b.ContainsKey('database')) { $b['database'] } else { 'CopilotSSIS_Warehouse' })
+            Server   = Get-RequiredConnectionValue $c 'server'   $Role
+            Database = Get-RequiredConnectionValue $c 'database' $Role
         }
     }
-    throw "Cannot resolve $Role connection."
+    if ($Metadata.ContainsKey($Role)) {
+        $b = [hashtable]$Metadata[$Role]
+        return [PSCustomObject]@{
+            Server   = Get-RequiredConnectionValue $b 'server'   $Role
+            Database = Get-RequiredConnectionValue $b 'database' $Role
+        }
+    }
+    throw "Cannot resolve $Role connection. Provide connections.$Role.{server,database} or $Role.{server,database}."
+}
+
+# No environment default is safe here: guessing a server or database silently
+# produces a package pointed at something the author never named.
+function Get-RequiredConnectionValue {
+    param([hashtable]$Block, [string]$Key, [string]$Role)
+    if (-not $Block.ContainsKey($Key) -or [string]::IsNullOrWhiteSpace([string]$Block[$Key])) {
+        throw "metadata: '$Role.$Key' is required and has no default. Set it to match your environment."
+    }
+    return $Block[$Key]
 }
 
 Export-ModuleMember -Function New-Type2DimensionPackage

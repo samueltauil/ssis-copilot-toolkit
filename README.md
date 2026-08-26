@@ -4,42 +4,133 @@ GitHub Copilot customizations (agents, skills, prompts, and PowerShell primitive
 
 The custom agent **ssis-author** writes structured metadata JSON, then calls a thin PowerShell layer that drives the same managed object model the SSIS designer uses internally (`Microsoft.SqlServer.Dts.Runtime`) to emit valid `.dtsx`. The agent never hand-edits the XML.
 
-## Two ways to onboard
+## Prerequisites
 
-### 1. New repo (use this as a template)
+SSIS authoring and execution are Windows-only: the managed object model, `dtexec`, and `dtutil` ship with the SQL Server client tools and have no Linux equivalent.
 
-Click **"Use this template" → "Create a new repository"** on the GitHub page. On the first push to `main`, a one-shot workflow ([template-cleanup.yml](.github/workflows/template-cleanup.yml)) strips the demo content (AdventureWorks2025 walkthrough, engineering plan, this README) and leaves you with a clean overlay: `tools/`, `.github/`, `.vscode/`, the brownfield installer, and a fresh README that points at your new repo.
+### Required for every scenario
 
-### 2. Existing SSIS repo (drop in the overlay)
+| Requirement | Why | How to check |
+|---|---|---|
+| **Windows** | The SSIS managed OM and `dtexec` are Windows-only | — |
+| **PowerShell 7+** (`pwsh`) | Runs the toolkit primitives. Windows PowerShell 5.1 also works | `pwsh -v` |
+| **.NET Framework 4.x** | `Build-SsisOmHost.ps1` compiles the managed-OM host with `csc.exe`. **No .NET SDK needed** — `csc.exe` ships with Windows | `Test-Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe` |
+| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` (GAC, `v4.0_17.0.0.0`) and `dtexec.exe`. The build script binds to these exact assembly versions | `Test-Path 'C:\Program Files\Microsoft SQL Server\170\DTS\Binn\dtexec.exe'` |
+| **GitHub Copilot Chat** | Drives the agents and prompts | Visual Studio 2026 (18.4+) or VS Code (Stable or Insiders) |
 
-Use this when you already have an SSIS repository (with your own `.dtproj`, packages, SQL, and folder layout) and just want to add the Copilot toolkit on top of it, without re-cloning or restructuring anything.
+> Installing only the SQL Server *database engine* is not enough — select **Integration Services** in the SQL Server installer, and install **SQL Server Data Tools / the SSIS projects extension** in Visual Studio if you want the designer.
+
+Verify the toolchain before anything else:
+
+```powershell
+.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
+```
+
+Success prints `OK: ...\SsisOmHost.exe`. This is a one-time step per machine. If it fails, the error names the missing assembly or compiler.
+
+### Additionally required to run the demo
+
+The AdventureWorks2025 walkthrough needs a live SQL Server; the greenfield and brownfield paths do not.
+
+| Requirement | Notes |
+|---|---|
+| **A SQL Server instance** | The demo config assumes `.\SQL2025`. Different instance? Edit `.ssis-toolkit.json` and the `source` / `target` blocks in `templates/metadata/*.json`. |
+| **`SqlServer` PowerShell module** | `Install-Module SqlServer -Scope CurrentUser` — used by `Install-Toolkit.ps1`. |
+| **AdventureWorks2025** restored on that instance | [Download and restore instructions](https://learn.microsoft.com/sql/samples/adventureworks-install-configure). `Install-Toolkit.ps1` verifies it but does not restore it. |
+| **SSISDB catalog** (deployment only) | Create via SSMS → **Integration Services Catalogs** → **Create Catalog**. Only needed if you deploy; the demo's validation gate does not require it. |
+
+## Choose your path
+
+| Your situation | Go to |
+|---|---|
+| You want to see the toolkit work end-to-end before adopting it | [Run the demo](#run-the-demo) |
+| You are starting a brand-new SSIS repo | [Greenfield](#greenfield-new-repo-from-the-template) |
+| You already have an SSIS repo with packages and a `.dtproj` | [Brownfield](#brownfield-existing-ssis-repo) |
+
+## Run the demo
+
+Builds all four package patterns against AdventureWorks2025, entirely from chat. Requires the demo prerequisites above.
+
+```powershell
+git clone https://github.com/samueltauil/ssis-copilot-toolkit.git
+cd ssis-copilot-toolkit
+```
+
+```powershell
+# 1. Build the managed-OM host (one-time per machine)
+.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
+
+# 2. Provision the demo databases (CopilotSSIS_Source, CopilotSSIS_Warehouse + stg/dim/fact/etl schemas)
+.\install\Install-Toolkit.ps1
+```
+
+This repo ships a `.ssis-toolkit.json` already pinned to the demo layout, so there is no scaffolding step. Open the folder in your IDE, select **ssis-author** from the agent picker, and run:
+
+```text
+/generate-staging-package
+> Load AdventureWorks2025 Sales.Customer into stg.Customer in CopilotSSIS_Warehouse.
+```
+
+Full step-by-step walkthrough, including all four patterns, validation SQL, and docs generation: **[GUIDE.md](GUIDE.md)**.
+
+Done experimenting? `.\tools\Remove-DemoAssets.ps1` removes the generated artifacts; add `-DropWarehouse` to drop the demo database too.
+
+## Greenfield: new repo from the template
+
+Use this when you are starting a new SSIS repository from scratch.
+
+1. Click **"Use this template" → "Create a new repository"** on the GitHub page.
+2. Clone your new repo and push once to `main`. A one-shot workflow ([template-cleanup.yml](.github/workflows/template-cleanup.yml)) reads [overlay.manifest.psd1](install/overlay.manifest.psd1), strips every path in its `Demo` list (the AdventureWorks walkthrough, demo SQL and metadata, the demo installer, this README, and the guide), regenerates `AGENTS.md` and `README.md` for your repo, then deletes itself.
+3. What remains is the overlay: `tools/`, `.github/`, `.vscode/`, `.ssis-toolkit.example.json`, and `docs/bring-your-own-databases.md`.
+
+Then, on your machine:
+
+```powershell
+# One-time per machine
+.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
+```
+
+Open the repo in Visual Studio 2026 (18.4+) or VS Code, select **ssis-author** from the agent picker, and run:
+
+```text
+/scaffold-new-ssis-project
+```
+
+This is the one-time repo setup step. The agent asks for your project folder and name, your source and warehouse servers and databases, and your warehouse schema names, then writes **`.ssis-toolkit.json`** and generates the `.dtproj`, connection managers, and `Project.params`.
+
+Every other prompt and primitive reads that file, so nothing in the toolkit assumes the demo layout or the demo databases. After it exists, go straight to the `/generate-*-package` prompts.
+
+Full walkthrough with a worked non-demo example: **[Bring your own databases](docs/bring-your-own-databases.md)**.
+
+## Brownfield: existing SSIS repo
+
+Use this when you already have an SSIS repository — your own `.dtproj`, packages, SQL, and folder layout — and want to add the Copilot toolkit on top without re-cloning or restructuring anything.
 
 ```powershell
 # From the root of your existing SSIS repository, in PowerShell on Windows:
 iex (irm https://raw.githubusercontent.com/samueltauil/ssis-copilot-toolkit/main/install/Add-CopilotSsisToolkit.ps1)
 ```
 
-What it does:
+What the installer does:
 
 1. Downloads [overlay.manifest.psd1](install/overlay.manifest.psd1) (the single source of truth for what ships) and [Add-CopilotSsisToolkit.ps1](install/Add-CopilotSsisToolkit.ps1).
-2. Copies the **overlay** into your tree. The manifest's `Overlay` list: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, and `install/` itself. See [What ships in the overlay](#what-ships-in-the-overlay) below for the complete list.
+2. Copies the **overlay** into your tree: `tools/`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, `.github/instructions/`, `.github/copilot-instructions.md`, `.vscode/`, `.ssis-toolkit.example.json`, and `docs/bring-your-own-databases.md`. See [What ships in the overlay](#what-ships-in-the-overlay) for the complete list.
 3. **Skips** any file that already exists in your repo (default `-Mode Skip`). Pass `-Mode Overwrite` to force-update every overlay file.
-4. Appends a **managed block** to your `AGENTS.md` and `.gitignore`. A managed block is a region fenced by `<!-- BEGIN: ssis-copilot-toolkit ... -->` / `<!-- END: ssis-copilot-toolkit -->` markers in `AGENTS.md` and the same comments with `#` in `.gitignore`. On re-run the script finds those markers and replaces only what's between them, leaving the rest of the file untouched. If your repo has no `AGENTS.md` or `.gitignore` yet, the script creates one with the block in it. These two files are managed this way regardless of `-Mode`.
-5. **Does not copy** the demo content (the manifest's `Demo` list): `templates/sql/`, `templates/metadata/`, `templates/ssis-project/`, `install/Install-Toolkit.ps1`, the demo script, this `README.md`, or the `template-cleanup.yml` workflow. Those are for the AdventureWorks2025 walkthrough that ships with the template, not for your repo.
+4. Appends a **managed block** to your `AGENTS.md` and `.gitignore` — a region fenced by `<!-- BEGIN: ssis-copilot-toolkit ... -->` / `<!-- END: ssis-copilot-toolkit -->` markers (and the `#` equivalents in `.gitignore`). On re-run it replaces only what is between those markers, leaving the rest of the file untouched. If your repo has neither file yet, the script creates it. These two are managed this way regardless of `-Mode`.
+5. **Does not copy** any demo content (the manifest's `Demo` list): `templates/`, `install/Install-Toolkit.ps1`, `tools/Remove-DemoAssets.ps1`, this `README.md`, `GUIDE.md`, or the workflows. Your repo keeps its own data model.
 
-Re-running the one-liner is safe and idempotent: copied files stay (or get refreshed under `-Mode Overwrite`), managed blocks get replaced in place, and your own files are left alone.
+Re-running the one-liner is safe and idempotent.
 
-After either path:
+Then:
 
 ```powershell
-# 1. Build the managed-OM helper (one-time, requires .NET 8 + SQL Server 2022/2025 client tools)
+# One-time per machine
 .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
-
-# 2. Open the repo in Visual Studio 2026 (18.4+) or VS Code, then in Copilot Chat:
-# Select ssis-author from the agent picker, then run:
-/generate-staging-package
-/generate-dim-type2-package
 ```
+
+Select **ssis-author** from the agent picker and run `/scaffold-new-ssis-project`. Point it at your **existing** project folder and connections — the prompt will not overwrite a `.dtproj` that already exists, it just records your layout in `.ssis-toolkit.json` and regenerates the project manifest so newly generated packages are registered.
+
+Already know your layout? Copy `.ssis-toolkit.example.json` to `.ssis-toolkit.json`, edit it, and skip the prompt. Details: **[Bring your own databases](docs/bring-your-own-databases.md)**.
 
 ## Using the toolkit from Copilot Chat
 
@@ -62,7 +153,7 @@ validate templates/ssis-project/StageCustomer.dtsx in templates/ssis-project/Dem
 
 | Prompt | What it does |
 |---|---|
-| `/scaffold-new-ssis-project` | One-time setup. Creates `.dtproj`, `Project.params`, and the `Source` / `Warehouse` connection managers via `tools/New-SsisProject.ps1`. |
+| `/scaffold-new-ssis-project` | One-time setup. Writes `.ssis-toolkit.json`, then creates `.dtproj`, `Project.params`, and the source / target connection managers via `tools/New-SsisProject.ps1`. |
 | `/generate-staging-package` | Source table to `stg.*` via OLE DB Source plus OLE DB Destination. |
 | `/generate-dim-type1-package` | `stg.*` to `dim.*` with overwrite-on-key-match (Type-1 SCD). |
 | `/generate-dim-type2-package` | `stg.*` to `dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo` (Type-2 SCD). |
@@ -90,7 +181,7 @@ You normally never call these yourself; the **ssis-author** agent does. They are
 
 | Primitive | Purpose |
 |---|---|
-| `tools/lib/SsisOmHost/Build-SsisOmHost.ps1` | Build the .NET 8 managed-OM host. Run once per machine. |
+| `tools/lib/SsisOmHost/Build-SsisOmHost.ps1` | Compile the managed-OM host with `csc.exe`. Run once per machine. |
 | `tools/New-SsisPackage.ps1 -Metadata <file.json>` | Generate a `.dtsx` from metadata JSON. |
 | `tools/Test-SsisPackage.ps1 -Package <file.dtsx>` | Validate via `dtexec /Validate /WarnAsError`. |
 | `tools/Test-SsisDesignerLoad.ps1 -Package <file.dtsx>` | Round-trip via `Microsoft.SqlServer.Dts.Runtime.Application.LoadPackage` to prove the designer can re-open it. |
@@ -104,15 +195,19 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 
 | Path | What |
 |---|---|
+| `.ssis-toolkit.example.json` | Template for the repo-scoped configuration every prompt and primitive reads |
+| `docs/bring-your-own-databases.md` | How to point the toolkit at your own source system and warehouse |
 | `.github/agents/` | **ssis-author** (authoring), **ssis-validator** (delivery gate) |
 | `.github/skills/` | 8 skills: `ssis-delivery-gate`, `ssis-package-patterns`, `dtexec-validation-triage`, `dtsx-xml-anatomy`, `ssis-clone-roundtrip`, `git-roundtrip-for-ssis`, `ssisdb-deployment`, `adventureworks-mapping` |
 | `.github/prompts/` | 8 `/`-invokable workflows: scaffold, generate-{staging,dim-type1,dim-type2,fact}, deploy-and-execute, generate-{validation-sql,package-docs} |
 | `.github/instructions/` | Per-file-pattern guidance (`.dtsx`, `.gitattributes`, metadata JSON, T-SQL, SSISDB) |
 | `tools/New-SsisPackage.ps1` | Generate a `.dtsx` from metadata JSON |
+| `tools/New-SsisProject.ps1` | Generate `.dtproj`, connection managers, and `Project.params` |
 | `tools/Test-SsisPackage.ps1` | Validate via `dtexec /Validate /WarnAsError` |
 | `tools/Test-SsisDesignerLoad.ps1` | Round-trip via `Application.LoadPackage` |
+| `tools/lib/ToolkitConfig.psm1` | Reads `.ssis-toolkit.json` and resolves repo-relative paths |
 | `tools/lib/SsisOm.psm1` + `tools/lib/patterns/` | PowerShell dispatchers that pick a pattern module per metadata JSON |
-| `tools/lib/SsisOmHost/` | .NET 8 console host that wraps `Microsoft.SqlServer.Dts.Runtime` (`Program.cs`, `PackageBuilder.cs`, `MetadataHelpers.cs`, per-pattern builders under `Patterns/`). Built once via `Build-SsisOmHost.ps1` |
+| `tools/lib/SsisOmHost/` | .NET Framework console host that wraps `Microsoft.SqlServer.Dts.Runtime` (`Program.cs`, `PackageBuilder.cs`, `MetadataHelpers.cs`, per-pattern builders under `Patterns/`). Built once via `Build-SsisOmHost.ps1` |
 | `.vscode/tasks.json` | Surfaces the primitives as `Ctrl+Shift+B` build tasks |
 
 Roadmap (referenced by **ssis-author**'s `deploy-and-execute` prompt, not yet shipped): `Build-SsisIspac.ps1`, `Publish-SsisIspac.ps1`, `Start-SsisExecution.ps1`, `Verify-ClonedProject.ps1`. The matching prompt refuses on invocation today.
@@ -187,6 +282,7 @@ References: Microsoft Learn, [Fact tables in a dimensional model](https://learn.
 ## Read next
 
 - [GUIDE.md](GUIDE.md): hands-on walkthrough driven entirely from GitHub Copilot Chat. Generate, modify, validate, and document all four package patterns by typing prompts; no PowerShell required after the one-time prep.
+- [docs/bring-your-own-databases.md](docs/bring-your-own-databases.md): pointing the toolkit at your own source system and warehouse instead of the demo.
 - [AGENTS.md](AGENTS.md): repo-wide agent contract.
 - [install/overlay.manifest.psd1](install/overlay.manifest.psd1): single source of truth for the brownfield installer and template-cleanup workflow.
 
@@ -194,7 +290,7 @@ References: Microsoft Learn, [Fact tables in a dimensional model](https://learn.
 
 The toolkit's design decisions trace back to these Microsoft Learn topics. Use them when reading the agent and skill files, when extending a pattern module, or when triaging a validation failure.
 
-**SSIS managed object model and CLIs**
+### SSIS managed object model and CLIs
 
 - [`Microsoft.SqlServer.Dts.Runtime` namespace](https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.dts.runtime): the .NET API the toolkit's host wraps.
 - [Building packages programmatically](https://learn.microsoft.com/en-us/sql/integration-services/building-packages-programmatically/building-packages-programmatically): landing page for the OM authoring model.
@@ -204,7 +300,7 @@ The toolkit's design decisions trace back to these Microsoft Learn topics. Use t
 - [SSIS DevOps standalone build tools (`SSISBuild.exe`)](https://learn.microsoft.com/en-us/sql/integration-services/devops/ssis-devops-standalone): the headless project builder referenced by the roadmap `Build-SsisIspac.ps1` primitive.
 - [`[MS-DTSX]` package XML format](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx/235600e9-0c13-4b5b-a388-aa3c65aec1dd) and [`[MS-DTSX2]`](https://learn.microsoft.com/openspecs/sql_data_portability/ms-dtsx2/fb216aa4-62ab-41c8-a6d5-5b1002739d21): the open spec for the `.dtsx` file. Read-only reference; the toolkit never hand-writes this.
 
-**Project deployment, catalog, and security**
+### Project deployment, catalog, and security
 
 - [Deploy Integration Services projects and packages](https://learn.microsoft.com/en-us/sql/integration-services/packages/deploy-integration-services-ssis-projects-and-packages): Project Deployment Model, `.ispac`, SSISDB. The only execution path the toolkit supports.
 - [Deploy an SSIS project with PowerShell](https://learn.microsoft.com/en-us/sql/integration-services/ssis-quickstart-deploy-powershell): pattern for the roadmap `Publish-SsisIspac.ps1` primitive.
@@ -214,7 +310,7 @@ The toolkit's design decisions trace back to these Microsoft Learn topics. Use t
 - [Access control for sensitive data in packages](https://learn.microsoft.com/en-us/sql/integration-services/security/access-control-for-sensitive-data-in-packages): `ProtectionLevel`. The toolkit pins every package and project to `DontSaveSensitive`.
 - [SSIS on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-migrate-ssis): the constraint that makes the toolkit Windows-only (no SSISDB on Linux; Project Deployment Model unsupported).
 
-**Kimball dimensional modeling methodology**
+### Kimball dimensional modeling methodology
 
 The foundational methodology for enterprise data warehousing that this toolkit implements. The four patterns (staging, Type-1 dimension, Type-2 dimension, fact load) directly map to Kimball's ETL subsystems.
 
@@ -223,7 +319,7 @@ The foundational methodology for enterprise data warehousing that this toolkit i
 - Ralph Kimball and Margy Ross, *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling*, 3rd Edition (Wiley, 2013). The canonical textbook. Chapters 1–3 establish star schema, SCD types, and surrogate keys; Chapter 19 covers ETL subsystems (the conceptual basis for the four pattern modules).
 - [Kimball Design Tips archive](https://www.kimballgroup.com/category/design-tip/): 20+ years of monthly design-tip articles covering edge cases (many-to-many bridge tables, multi-valued dimensions, handling late-arriving facts, snapshot fact tables, handling source key reuse).
 
-**Dimensional modeling and load patterns**
+### Dimensional modeling and load patterns
 
 The four pattern modules under `tools\lib\patterns\` (`StagingLoad`, `Type1Dimension`, `Type2Dimension`, `FactLoad`) implement these Microsoft-documented shapes. Following them gives you portable warehouse loads that any SSIS, Fabric, Synapse, or Power BI practitioner will recognize, not toolkit-specific conventions.
 
@@ -234,15 +330,11 @@ The four pattern modules under `tools\lib\patterns\` (`StagingLoad`, `Type1Dimen
 - [Dimensional modeling, load tables](https://learn.microsoft.com/en-us/fabric/data-warehouse/dimensional-modeling-load-tables): end-to-end ETL flow: stage, then process dimensions (per SCD type), then process facts (with surrogate-key lookups and inferred dimension members). The conceptual basis for the `StagingLoad` module and for the lookup behavior in `FactLoad`.
 - [Slowly Changing Dimension transformation (SSIS)](https://learn.microsoft.com/en-us/sql/integration-services/data-flow/transformations/slowly-changing-dimension-transformation): the SSIS-native SCD Wizard, with the same Type 1 (*changing attribute*) and Type 2 (*historical attribute*) outputs the `Type1Dimension` and `Type2Dimension` modules emit. The wizard does not support Type 3, which is why this toolkit does not either.
 
-**Copilot customization**
+### Copilot customization
 
 - [VS Code Copilot customization overview](https://code.visualstudio.com/docs/copilot/customization/overview): agents, skills, prompts, and instructions. The portable schema both Visual Studio 2026 and VS Code honor.
 - [`AGENTS.md` cross-tool convention](https://agents.md/): the format used for the repo-wide agent contract.
 
 ## Requirements
 
-- **Windows.** The SSIS managed OM and `dtexec` are Windows-only.
-- **PowerShell 7+** (`pwsh`) preferred; Windows PowerShell 5.1 is supported.
-- **.NET 8 SDK**, required by the managed-OM helper exe.
-- **SQL Server 2022 or 2025 client tools**, which provide `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`.
-- **GitHub Copilot Chat** in Visual Studio 2026 (18.4+) or VS Code (Stable or Insiders).
+Moved to [Prerequisites](#prerequisites) at the top of this file, which also covers what the demo needs on top of the base toolchain.

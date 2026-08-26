@@ -9,9 +9,10 @@ Inputs:
 - Package name OR `.dtsx` file path.
 
 Steps:
-1. Load the package via `Application.LoadPackage` (read-only) and walk the control flow and data flow.
-2. Read the matching `templates/metadata/<PackageName>.metadata.json` for the intent (pattern, source, target, key strategy).
-3. Write `templates/docs/<PackageName>.md` with these sections:
+1. Read `.ssis-toolkit.json` for `metadataPath`, `docsPath`, and `validationSqlPath`.
+2. Load the package via `Application.LoadPackage` (read-only) and walk the control flow and data flow.
+3. Read the matching `<metadataPath>/<PackageName>.metadata.json` for the intent (pattern, source, target, key strategy).
+4. Write `<docsPath>/<PackageName>.md` with these sections:
    - **Purpose** (one paragraph from the metadata `description`).
    - **Pattern** (staging / type1-dim / type2-dim / fact) and what that pattern guarantees.
    - **Control flow** — each task, in order, one line each.
@@ -19,7 +20,7 @@ Steps:
    - **Connection managers** — name, type, and what each points at.
    - **Parameters** — name, scope (project vs package), default, sensitive Y/N.
    - **Runbook** — exact PowerShell command to execute, expected runtime, what success looks like, what failure looks like.
-   - **Validation queries** — link to the matching `templates/sql/validate-<PackageName>.sql` if present.
-4. Refresh `templates/docs/README.md` (the index) to include the new doc.
+   - **Validation queries** — link to the matching `<validationSqlPath>/validate-<PackageName>.sql` if present.
+5. Refresh `<docsPath>/README.md` (the index) to include the new doc.
 
 Do not modify the `.dtsx`. Do not modify the metadata JSON.

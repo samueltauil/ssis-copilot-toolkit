@@ -18,17 +18,18 @@
       3. Surfaces exit code + stderr verbatim.
 
 .PARAMETER Metadata
-    Path to the metadata JSON file under templates/metadata/.
+    Path to the metadata JSON file. Lives under the repo's configured
+    metadataPath (see .ssis-toolkit.json).
 
 .PARAMETER OutputPath
-    Where to write the .dtsx. Default: templates/ssis-project/Packages/<packageName>.dtsx
-    Resolved by the helper exe when omitted.
+    Where to write the .dtsx. Defaults to <projectPath>/<packageName>.dtsx,
+    with projectPath read from .ssis-toolkit.json.
 
 .PARAMETER SkipBuild
     Skip the helper-exe rebuild step. Use when iterating on metadata only.
 
 .EXAMPLE
-    .\tools\New-SsisPackage.ps1 -Metadata .\templates\metadata\Stg_Customer.metadata.json
+    .\tools\New-SsisPackage.ps1 -Metadata .\etl\metadata\Stg_Account.metadata.json
 #>
 
 [CmdletBinding()]
@@ -66,12 +67,14 @@ if (-not (Test-Path -LiteralPath $exePath)) {
 }
 
 if (-not $OutputPath) {
-    # Flat structure: packages sit alongside .dtproj in templates/ssis-project/.
+    # Flat structure: packages sit alongside the .dtproj in the configured project folder.
     $meta = Get-Content -LiteralPath $Metadata -Raw | ConvertFrom-Json
     if (-not $meta.packageName) {
         throw "metadata.packageName missing - cannot infer OutputPath."
     }
-    $pkgDir = Join-Path $repoRoot 'templates\ssis-project'
+    Import-Module (Join-Path $PSScriptRoot 'lib\ToolkitConfig.psm1') -Force
+    $config = Get-SsisToolkitConfig -StartPath $repoRoot
+    $pkgDir = Resolve-SsisToolkitPath -Config $config -Key 'projectPath'
     if (-not (Test-Path -LiteralPath $pkgDir)) {
         New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
     }

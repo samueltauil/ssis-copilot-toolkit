@@ -16,7 +16,7 @@
   Path to the .dtsx to round-trip.
 
 .EXAMPLE
-  .\tools\Test-SsisDesignerLoad.ps1 -Package .\templates\ssis-project\Packages\Stg_Customer.dtsx
+  .\tools\Test-SsisDesignerLoad.ps1 -Package .\src\MyWarehouse\Stg_Account.dtsx
 
 .NOTES
   Cite: https://learn.microsoft.com/sql/integration-services/building-packages-programmatically/loading-and-saving-packages?view=sql-server-ver17

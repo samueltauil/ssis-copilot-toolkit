@@ -45,11 +45,8 @@ namespace SsisOmHost.Patterns
                 throw new System.ArgumentException(
                     "type2-dim metadata: businessKey and surrogateKey must differ.");
             }
-            if (!targetTable.StartsWith("dim.") && !targetTable.StartsWith("[dim]."))
-            {
-                throw new System.ArgumentException(
-                    "type2-dim metadata: targetTable '" + targetTable + "' must be in the 'dim' schema.");
-            }
+            string dimSchema = MetadataHelpers.GetSchemaName(meta, "dimension", "dim");
+            MetadataHelpers.EnsureTargetSchema("type2-dim", "dimension", targetTable, dimSchema);
 
             string currentCol = MetadataHelpers.GetString(meta, "currentFlagColumn",   defaultValue: "IsCurrent");
             string fromCol    = MetadataHelpers.GetString(meta, "effectiveFromColumn", defaultValue: "EffectiveFrom");

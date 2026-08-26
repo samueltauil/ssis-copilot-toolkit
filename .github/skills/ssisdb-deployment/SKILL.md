@@ -19,10 +19,11 @@ description: "Use when deploying an .ispac to SSISDB and executing packages via 
 ## Deploy procedure
 
 ```powershell
-$Server   = '.\SQL2025'
-$Folder   = 'Demo'
-$Project  = 'CopilotSSISDemo'
-$Ispac    = 'out\CopilotSSISDemo.ispac'
+# Values come from .ssis-toolkit.json and the user's chosen SSISDB folder.
+$Server   = '<target server>'
+$Folder   = '<SSISDB folder>'
+$Project  = '<projectName>'
+$Ispac    = "out\$Project.ispac"
 
 # 1. Create folder if not present
 Invoke-Sqlcmd -ServerInstance $Server -Database SSISDB -Query @"
@@ -47,8 +48,8 @@ Then validate via `catalog.validate_project` (whole project) or `catalog.validat
 ```sql
 DECLARE @valid bigint;
 EXEC SSISDB.catalog.validate_package
-     @folder_name = N'Demo',
-     @project_name = N'CopilotSSISDemo',
+     @folder_name = N'<SSISDB folder>',
+     @project_name = N'<projectName>',
      @package_name = N'Dim_Customer.dtsx',
      @validation_id = @valid OUTPUT;
 ```
@@ -60,8 +61,8 @@ Validation results live in `catalog.validations` / `catalog.operation_messages`.
 ```sql
 DECLARE @exec_id bigint;
 EXEC SSISDB.catalog.create_execution
-     @folder_name = N'Demo',
-     @project_name = N'CopilotSSISDemo',
+     @folder_name = N'<SSISDB folder>',
+     @project_name = N'<projectName>',
      @package_name = N'Dim_Customer.dtsx',
      @use32bitruntime = 0,
      @reference_id = NULL,
@@ -114,7 +115,7 @@ EXEC SSISDB.catalog.set_execution_parameter_value
      @execution_id = @exec_id,
      @object_type  = 20,
      @parameter_name = N'CM.Source.InitialCatalog',
-     @parameter_value = N'AdventureWorks2025';
+     @parameter_value = N'<database name>';
 ```
 
 ## Don't

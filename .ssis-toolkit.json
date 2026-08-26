@@ -1,0 +1,24 @@
+{
+  "projectPath": "templates/ssis-project",
+  "projectName": "CopilotSsisDemos",
+  "metadataPath": "templates/metadata",
+  "validationSqlPath": "templates/sql",
+  "docsPath": "templates/docs",
+  "connections": {
+    "source": {
+      "name": "AdventureWorks2025",
+      "server": ".\\SQL2025",
+      "database": "AdventureWorks2025"
+    },
+    "target": {
+      "name": "CopilotSSIS_Warehouse",
+      "server": ".\\SQL2025",
+      "database": "CopilotSSIS_Warehouse"
+    }
+  },
+  "schemas": {
+    "staging": "stg",
+    "dimension": "dim",
+    "fact": "fact"
+  }
+}

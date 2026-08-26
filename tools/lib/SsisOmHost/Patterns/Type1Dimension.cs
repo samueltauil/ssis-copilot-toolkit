@@ -38,11 +38,8 @@ namespace SsisOmHost.Patterns
                 throw new System.ArgumentException(
                     "type1-dim metadata: businessKey and surrogateKey must differ.");
             }
-            if (!targetTable.StartsWith("dim.") && !targetTable.StartsWith("[dim]."))
-            {
-                throw new System.ArgumentException(
-                    "type1-dim metadata: targetTable '" + targetTable + "' must be in the 'dim' schema.");
-            }
+            string dimSchema = MetadataHelpers.GetSchemaName(meta, "dimension", "dim");
+            MetadataHelpers.EnsureTargetSchema("type1-dim", "dimension", targetTable, dimSchema);
 
             var payloadArr = MetadataHelpers.GetArray(meta, "payloadColumns", required: true);
             if (payloadArr.Count == 0)

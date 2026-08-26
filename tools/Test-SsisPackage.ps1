@@ -19,7 +19,7 @@
   Server 2025 install path; falls back to PATH lookup.
 
 .EXAMPLE
-  .\tools\Test-SsisPackage.ps1 -Package .\templates\ssis-project\Packages\Stg_Customer.dtsx
+  .\tools\Test-SsisPackage.ps1 -Package .\src\MyWarehouse\Stg_Account.dtsx
 
 .NOTES
   Cite: https://learn.microsoft.com/sql/integration-services/packages/dtexec-utility?view=sql-server-ver17

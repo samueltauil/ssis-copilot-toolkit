@@ -18,11 +18,8 @@ namespace SsisOmHost.Patterns
             string targetTable     = MetadataHelpers.GetString(meta, "targetTable",      required: true);
             bool   truncate        = MetadataHelpers.GetBool  (meta, "truncateBeforeLoad", true);
 
-            if (!targetTable.StartsWith("stg.") && !targetTable.StartsWith("[stg]."))
-            {
-                throw new System.ArgumentException(
-                    "staging metadata: targetTable '" + targetTable + "' must be in the 'stg' schema.");
-            }
+            string stagingSchema = MetadataHelpers.GetSchemaName(meta, "staging", "stg");
+            MetadataHelpers.EnsureTargetSchema("staging", "staging", targetTable, stagingSchema);
 
             string sourceQuery = ResolveSourceQuery(meta);
             var srcConn = MetadataHelpers.ResolveConnection(meta, "source");
@@ -59,18 +56,29 @@ namespace SsisOmHost.Patterns
             PackageBuilder.ConnectComponents(df, derived, oleDst);
             PackageBuilder.InitializeOleDbDestinationMapping(oleDst);
 
-            var runSql = new StringBuilder()
-                .Append("INSERT INTO etl.PackageRun (PackageName, StartedAt, FinishedAt, Status, RowsLoaded) ")
-                .Append("VALUES (N'").Append(packageName).Append("', SYSUTCDATETIME(), SYSUTCDATETIME(), N'Succeeded', NULL);")
-                .ToString();
-            var logTask = PackageBuilder.AddExecuteSqlTask(pkg, "SQL Insert PackageRun", tgt, runSql);
+            // Optional ETL audit row. Only emitted when the metadata names an audit table,
+            // because that table is a warehouse convention, not something every repo has.
+            Executable logTask = null;
+            string auditTable = MetadataHelpers.GetString(meta, "auditTable");
+            if (!string.IsNullOrWhiteSpace(auditTable))
+            {
+                var runSql = new StringBuilder()
+                    .Append("INSERT INTO ").Append(auditTable)
+                    .Append(" (PackageName, StartedAt, FinishedAt, Status, RowsLoaded) ")
+                    .Append("VALUES (N'").Append(packageName).Append("', SYSUTCDATETIME(), SYSUTCDATETIME(), N'Succeeded', NULL);")
+                    .ToString();
+                logTask = PackageBuilder.AddExecuteSqlTask(pkg, "SQL Insert PackageRun", tgt, runSql);
+            }
 
             // Wire precedence constraints (the green arrows in the designer).
             if (truncateTask != null)
             {
                 PackageBuilder.AddPrecedenceConstraint(pkg, truncateTask, df.TaskHost);
             }
-            PackageBuilder.AddPrecedenceConstraint(pkg, df.TaskHost, logTask);
+            if (logTask != null)
+            {
+                PackageBuilder.AddPrecedenceConstraint(pkg, df.TaskHost, logTask);
+            }
 
             PackageBuilder.SavePackage(pkg, outputPath);
         }

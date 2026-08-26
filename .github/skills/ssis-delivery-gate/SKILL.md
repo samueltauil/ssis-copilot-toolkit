@@ -11,7 +11,7 @@ The gate is a sequence of single-purpose PowerShell primitives. Each primitive d
 
 ## Inputs
 
-- `Package` — absolute path to a `.dtsx` file under `templates/ssis-project/Packages/`
+- `Package` — absolute path to a `.dtsx` file under the repo's configured `projectPath`
 - `Project` — absolute path to the parent `.dtproj`
 
 Both must exist on disk. If either is missing, return `INVALID_INPUT` and stop.
@@ -54,7 +54,7 @@ When shipped, this step will build the `.dtproj` via the Microsoft-published sta
 .\tools\Build-SsisIspac.ps1 -Project $Project
 ```
 
-- **PASS** = `.ispac` produced under `templates/ssis-project/bin/Development/`.
+- **PASS** = `.ispac` produced under `<projectPath>/bin/Development/`.
 - **FAIL** = SSISBuild.exe exits non-zero. The error usually indicates a project-level issue (ProtectionLevel mismatch, missing connection manager, parameter binding error). Capture SSISBuild stderr as evidence.
 - **SKIPPED (roadmap)** = primitive does not exist on disk yet.
 

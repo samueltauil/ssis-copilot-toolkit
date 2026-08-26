@@ -26,5 +26,6 @@
         { "source": "SubTotal",     "target": "SubTotal",     "dataType": "decimal(19, 4)" }
     ],
     "truncateBeforeLoad": true,
+    "auditTable": "etl.PackageRun",
     "protectionLevel": "DontSaveSensitive"
 }

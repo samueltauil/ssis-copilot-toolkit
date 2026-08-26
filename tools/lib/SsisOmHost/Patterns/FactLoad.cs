@@ -22,11 +22,8 @@ namespace SsisOmHost.Patterns
             string targetConnName = MetadataHelpers.GetString(meta, "targetConnection", required: true);
             string targetTable    = MetadataHelpers.GetString(meta, "targetTable",      required: true);
 
-            if (!targetTable.StartsWith("fact.") && !targetTable.StartsWith("[fact]."))
-            {
-                throw new System.ArgumentException(
-                    "fact metadata: targetTable '" + targetTable + "' must be in the 'fact' schema.");
-            }
+            string factSchema = MetadataHelpers.GetSchemaName(meta, "fact", "fact");
+            MetadataHelpers.EnsureTargetSchema("fact", "fact", targetTable, factSchema);
 
             var lookups = MetadataHelpers.GetArray(meta, "dimensionLookups", required: true);
             if (lookups.Count == 0)

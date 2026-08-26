@@ -8,16 +8,17 @@ Anything that orchestrates multiple primitives (validate → designer-load → b
 
 | Script | What it does | Wraps |
 |---|---|---|
-| `lib/SsisOmHost/Build-SsisOmHost.ps1` | One-time build of the .NET 8 console host that fronts the managed OM | `dotnet publish` against `lib/SsisOmHost/*.cs` |
-| `New-SsisPackage.ps1` | Reads a metadata JSON, dispatches to a `lib/patterns/*.psm1` module, calls the host to write `.dtsx` | `Microsoft.SqlServer.Dts.Runtime.Package.SaveToXml` (via the host) |
+| `lib/SsisOmHost/Build-SsisOmHost.ps1` | One-time build of the console host that fronts the managed OM | `csc.exe` against `lib/SsisOmHost/*.cs` |
+| `New-SsisPackage.ps1` | Reads a metadata JSON and calls the host to write the `.dtsx` | `Microsoft.SqlServer.Dts.Runtime.Package.SaveToXml` (via the host) |
 | `New-SsisProject.ps1` | Generates `.dtproj`, `.conmgr`, and `.params` files for Visual Studio Designer | Well-formed XML generation |
 | `Test-SsisPackage.ps1` | Runtime validation | `dtexec.exe /Validate /WarnAsError` |
 | `Test-SsisDesignerLoad.ps1` | Round-trip via the managed OM | `Microsoft.SqlServer.Dts.Runtime.Application.LoadPackage` |
-| `Remove-DemoAssets.ps1` | Cleanup script — drops warehouse DB, SSISDB Demo folder, generated artifacts | `SqlServer` module + file system operations |
+
+Every path and connection these scripts use comes from `.ssis-toolkit.json` at the repo root. None of them hard-code a folder, server, or database.
 
 ## Roadmap primitives
 
-Referenced by the **ssis-author** agent's `deploy-and-execute` and `scaffold-new-ssis-project` prompts and by Steps 3 and 4 of the delivery gate. Not yet on disk; both prompts refuse on invocation, and the delivery gate reports SKIPPED for the matching steps.
+Referenced by the **ssis-author** agent's `deploy-and-execute` prompt and by Steps 3 and 4 of the delivery gate. Not yet on disk; that prompt refuses on invocation, and the delivery gate reports SKIPPED for the matching steps.
 
 | Script | Will do | Will wrap |
 |---|---|---|
@@ -30,15 +31,12 @@ Referenced by the **ssis-author** agent's `deploy-and-execute` and `scaffold-new
 
 | Path | Purpose |
 |---|---|
-| `lib/SsisOm.psm1` | PowerShell helpers that locate and invoke the .NET 8 host |
-| `lib/patterns/StagingLoad.psm1` | Dispatcher for the staging pattern |
-| `lib/patterns/Type1Dimension.psm1` | Dispatcher for the Type-1 dimension pattern |
-| `lib/patterns/Type2Dimension.psm1` | Dispatcher for the Type-2 (SCD-2) dimension pattern |
-| `lib/patterns/FactLoad.psm1` | Dispatcher for the fact-load pattern |
-| `lib/SsisOmHost/Program.cs` | Entry point of the .NET 8 console host |
+| `lib/ToolkitConfig.psm1` | Locates and reads `.ssis-toolkit.json`; resolves repo-relative paths |
+| `lib/SsisOmHost/Program.cs` | Entry point of the console host; dispatches on `pattern` |
 | `lib/SsisOmHost/PackageBuilder.cs` | Core OM glue (`Package`, `ConnectionManager`, control flow, data flow) |
-| `lib/SsisOmHost/MetadataHelpers.cs` | Metadata JSON deserialization + validation |
+| `lib/SsisOmHost/MetadataHelpers.cs` | Metadata JSON accessors, connection resolution, schema checks |
 | `lib/SsisOmHost/Patterns/` | Per-pattern C# builders called by the host |
+| `lib/SsisOm.psm1`, `lib/patterns/*.psm1` | Superseded by the C# host, which owns all OM work. Retained for reference only — `New-SsisPackage.ps1` does not load them. |
 
 ## What you will NOT find here
 
