@@ -22,7 +22,7 @@ Open the Copilot Chat panel. You are ready.
 
 ## Step 1. One-time prep (ask Copilot to do it)
 
-Two things have to happen once per machine before the agent can author packages: build the .NET 8 host that wraps the SSIS managed object model, and create the demo databases the example metadata points at.
+Two things have to happen once per machine before the agent can author packages: build the .NET host that wraps the SSIS managed object model, and create the demo databases the example metadata points at.
 
 In Copilot Chat, ask:
 
@@ -31,6 +31,8 @@ In Copilot Chat, ask:
 Copilot will surface both commands for your approval, run them in the integrated terminal, and report back. You should see `SsisOmHost.exe` produced and the databases `CopilotSSIS_Source` and `CopilotSSIS_Warehouse` created with the `stg` / `dim` / `fact` / `etl` schemas applied.
 
 (Prefer to run them yourself? Both are documented in the [README primitives table](README.md#powershell-primitives-callable-directly-or-via-ctrlshiftb).)
+
+This repo already ships a `.ssis-toolkit.json` pinned to the demo layout, so you can skip `/scaffold-new-ssis-project` here. In your own repo that prompt is the first thing you run — see [Bring your own databases](docs/bring-your-own-databases.md).
 
 ## Step 2. Generate your first package, from chat
 
@@ -166,6 +168,6 @@ When those land, the chat experience is the same shape: a single prompt, the age
 ## What's next
 
 - **Clean up and start fresh.** Run `.\tools\Remove-DemoAssets.ps1` to remove all generated packages, project files, SSISDB content, and built artifacts. Add `-DropWarehouse` to also drop the demo database. Idempotent and safe to repeat.
-- **Drop the toolkit into your existing SSIS repo.** One-liner in the [README brownfield section](README.md#2-existing-ssis-repo-drop-in-the-overlay). The demo content used in this guide is **not** copied; your repo keeps its own data model. After installing, the same chat-first workflow above works against your tables.
+- **Drop the toolkit into your existing SSIS repo.** One-liner in the [README brownfield section](README.md#2-existing-ssis-repo-drop-in-the-overlay). The demo content used in this guide is **not** copied; your repo keeps its own data model. Run `/scaffold-new-ssis-project` once to write `.ssis-toolkit.json`, then the same chat-first workflow above works against your tables. Full walkthrough: [Bring your own databases](docs/bring-your-own-databases.md).
 - **Add a fifth pattern.** Write a module under `tools\lib\patterns\`, extend the dispatcher in `tools\lib\SsisOm.psm1`, document the metadata fields in [.github/instructions/metadata-schema.instructions.md](.github/instructions/metadata-schema.instructions.md), and add a slash prompt under [.github/prompts/](.github/prompts/). The **ssis-author** agent picks it up automatically.
 - **Read the contract.** [AGENTS.md](AGENTS.md) covers the hard rules, the two-layer architecture (PowerShell primitives + skills/agents), and what NOT to invent.

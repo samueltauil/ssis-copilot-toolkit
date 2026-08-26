@@ -11,7 +11,7 @@ Use when adding a new SSIS package pattern to the toolkit (beyond the four shipp
 
 ### 1. Define the metadata schema extension
 
-Create a sample `templates/metadata/<PatternName>.metadata.json` with:
+Create a sample `<metadataPath>/<PatternName>.metadata.json` with:
 - `"pattern": "<patternKey>"` — a new lowercase key (e.g. `"bridge"`, `"aggregate"`, `"delete-detection"`).
 - All fields the builder will need (source/destination tables, columns, keys, any pattern-specific options).
 - Follow the rules in `.github/instructions/metadata-schema.instructions.md`.
@@ -42,7 +42,7 @@ Add your new pattern key to the `switch` statement in `tools/lib/SsisOm.psm1` so
 
 ### 6. Add DDL for target tables (demo only)
 
-If you are extending the demo walkthrough, add a SQL script under `templates/sql/` for the target schema/table. Follow `.github/instructions/sql-conventions.instructions.md`.
+If you are extending the demo walkthrough, add a SQL script for the target schema/table alongside the repo's other DDL. Follow `.github/instructions/sql-conventions.instructions.md`.
 
 ### 7. Run the delivery gate
 
@@ -56,7 +56,7 @@ After generating a test package with your new pattern:
 - Add the pattern to the table in `AGENTS.md` (§ "The four supported package patterns" — now N+1).
 - Add to `README.md` § "The four supported package patterns" with a "Why" paragraph.
 - Add to `.github/skills/ssis-package-patterns/SKILL.md` with the managed-OM call sequence.
-- If the pattern is demo-only, add a sample `.metadata.json` under `templates/metadata/`.
+- If the pattern is demo-only, add a sample `.metadata.json` under the configured `metadataPath`.
 
 ## Anti-patterns
 

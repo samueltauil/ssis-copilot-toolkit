@@ -20,7 +20,22 @@ Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-s
 2. **The ssis-author agent is the only sanctioned entry point for SSIS work.** The default Copilot agent may answer general questions (e.g. "what does this PowerShell line do?") but must not author SSIS artifacts.
 3. **The validation gate is non-bypassable.** It is encoded in the [`ssis-delivery-gate`](.github/skills/ssis-delivery-gate/SKILL.md) skill and run by the **ssis-validator** agent. The **ssis-author** agent must spawn **ssis-validator** after every SSIS-affecting change and surface its verdict verbatim. No verdict, no "done".
 4. **`ProtectionLevel = DontSaveSensitive` on project and every package.** Sensitive values resolve at runtime via SSISDB environment variables — never commit credentials.
-5. **Cite Microsoft Learn for SSIS technical decisions.** When introducing or changing a design rule, add the supporting `learn.microsoft.com` URL to the [README References section](README.md#references).
+5. **Nothing in the overlay may assume the demo environment.** Paths, servers, databases, and warehouse schema names come from `.ssis-toolkit.json` at the repo root. No file shipped in the manifest's `Overlay` list may hard-code `templates/…`, the demo databases, or the demo SQL Server instance. `install/Test-OverlayPortability.ps1` enforces this in CI — run it before opening a PR.
+6. **Cite Microsoft Learn for SSIS technical decisions.** When introducing or changing a design rule, add the supporting `learn.microsoft.com` URL to the [README References section](README.md#references).
+
+## Repo-scoped configuration
+
+`.ssis-toolkit.json` is the single source of truth for where a repo keeps its SSIS artifacts and what it connects to:
+
+| Key | Controls |
+|---|---|
+| `projectPath` / `projectName` | The `.dtproj` folder and name; also where generated `.dtsx` files land |
+| `metadataPath` | Metadata JSON location |
+| `validationSqlPath` / `docsPath` | Outputs of `/generate-validation-sql` and `/generate-package-docs` |
+| `connections.source` / `.target` | Connection-manager name, server, and database per role |
+| `schemas.staging` / `.dimension` / `.fact` | Warehouse schema names the four patterns enforce |
+
+This repo's own copy points at the demo layout and is in the manifest's `Demo` list. Customer repos generate their own via `/scaffold-new-ssis-project`. Server and database have **no fallback** — the generator fails loudly rather than guessing.
 
 ## Architecture in two layers
 
@@ -35,12 +50,15 @@ Demo script: [context/github-copilot-ssis-demo-plan.md](context/github-copilot-s
 | Validate (`dtexec /Validate /WarnAsError`) | `.\tools\Test-SsisPackage.ps1 -Package <file.dtsx>` |
 | Designer-load round-trip (`Application.LoadPackage`) | `.\tools\Test-SsisDesignerLoad.ps1 -Package <file.dtsx>` |
 | Generate `.dtproj`, connection managers, and project params | `.\tools\New-SsisProject.ps1` |
+| Read `.ssis-toolkit.json` from PowerShell | `tools\lib\ToolkitConfig.psm1` (`Get-SsisToolkitConfig`, `Resolve-SsisToolkitPath`) |
 
 *Demo-only (manifest's `Demo` list — template repos and contributors, not brownfield repos):*
 
 | Goal | Primitive |
 |---|---|
 | Provision SQL DBs + SSISDB for the AdventureWorks2025 walkthrough | `.\install\Install-Toolkit.ps1` |
+| Tear down the demo databases and generated demo artifacts | `.\tools\Remove-DemoAssets.ps1` |
+| Fail the build if an overlay file assumes the demo environment | `.\install\Test-OverlayPortability.ps1` |
 
 *Roadmap (not yet implemented; referenced by **ssis-author**'s deploy-and-execute prompt):*
 

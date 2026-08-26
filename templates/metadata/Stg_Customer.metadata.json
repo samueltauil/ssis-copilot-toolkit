@@ -29,5 +29,6 @@
         { "source": "AccountNumber", "target": "AccountNumber", "dataType": "nvarchar(10)" }
     ],
     "truncateBeforeLoad": true,
+    "auditTable": "etl.PackageRun",
     "protectionLevel": "DontSaveSensitive"
 }

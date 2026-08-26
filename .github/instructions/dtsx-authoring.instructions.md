@@ -1,6 +1,6 @@
 ---
 description: "Use when editing, opening, or generating SSIS package files (.dtsx, .dtproj, .conmgr, .params) — enforces the never-hand-edit-XML rule and routes work through the managed object model pattern modules."
-applyTo: "**/*.dtsx, **/*.dtproj, **/*.conmgr, **/*.params, templates/ssis-project/**"
+applyTo: "**/*.dtsx, **/*.dtproj, **/*.conmgr, **/*.params"
 ---
 # DTSX authoring rules
 
@@ -15,8 +15,8 @@ These files contain internal refIds, lineage IDs, designer-only DesignTimeProper
 
 ## How to author or change a package
 
-1. Edit the **metadata JSON** under `templates/metadata/` (or generate a new one).
-2. Run `.\tools\New-SsisPackage.ps1 -Metadata <file.json>` — it dispatches to the pattern module under `tools/lib/patterns/` and emits the `.dtsx` via `Package.SaveToXml`.
+1. Edit the **metadata JSON** under the repo's configured `metadataPath` (see `.ssis-toolkit.json`), or generate a new one.
+2. Run `.\tools\New-SsisPackage.ps1 -Metadata <file.json>` — it invokes the managed-OM host, which picks the right pattern builder and emits the `.dtsx` via `Package.SaveToXml`.
 3. Run the delivery gate (skill: [`ssis-delivery-gate`](../skills/ssis-delivery-gate/SKILL.md)): `Test-SsisPackage.ps1` → `Test-SsisDesignerLoad.ps1`. `Build-SsisIspac.ps1` and `Verify-ClonedProject.ps1` are roadmap and skipped today.
 
 ## If the existing patterns don't fit

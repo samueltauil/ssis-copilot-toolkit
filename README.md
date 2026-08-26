@@ -37,9 +37,13 @@ After either path:
 
 # 2. Open the repo in Visual Studio 2026 (18.4+) or VS Code, then in Copilot Chat:
 # Select ssis-author from the agent picker, then run:
+/scaffold-new-ssis-project
 /generate-staging-package
-/generate-dim-type2-package
 ```
+
+`/scaffold-new-ssis-project` is the one-time setup step. It writes `.ssis-toolkit.json` — the repo-scoped configuration that tells the toolkit where your SSIS project, metadata, and validation SQL live, and which servers, databases, and warehouse schemas to use. Every other prompt and primitive reads it, so nothing in the toolkit assumes the demo layout or the demo databases.
+
+Using your own source system and warehouse? See **[Bring your own databases](docs/bring-your-own-databases.md)**.
 
 ## Using the toolkit from Copilot Chat
 
@@ -62,7 +66,7 @@ validate templates/ssis-project/StageCustomer.dtsx in templates/ssis-project/Dem
 
 | Prompt | What it does |
 |---|---|
-| `/scaffold-new-ssis-project` | One-time setup. Creates `.dtproj`, `Project.params`, and the `Source` / `Warehouse` connection managers via `tools/New-SsisProject.ps1`. |
+| `/scaffold-new-ssis-project` | One-time setup. Writes `.ssis-toolkit.json`, then creates `.dtproj`, `Project.params`, and the source / target connection managers via `tools/New-SsisProject.ps1`. |
 | `/generate-staging-package` | Source table to `stg.*` via OLE DB Source plus OLE DB Destination. |
 | `/generate-dim-type1-package` | `stg.*` to `dim.*` with overwrite-on-key-match (Type-1 SCD). |
 | `/generate-dim-type2-package` | `stg.*` to `dim.*` with `IsCurrent`, `EffectiveFrom`, `EffectiveTo` (Type-2 SCD). |
@@ -104,13 +108,17 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 
 | Path | What |
 |---|---|
+| `.ssis-toolkit.example.json` | Template for the repo-scoped configuration every prompt and primitive reads |
+| `docs/bring-your-own-databases.md` | How to point the toolkit at your own source system and warehouse |
 | `.github/agents/` | **ssis-author** (authoring), **ssis-validator** (delivery gate) |
 | `.github/skills/` | 8 skills: `ssis-delivery-gate`, `ssis-package-patterns`, `dtexec-validation-triage`, `dtsx-xml-anatomy`, `ssis-clone-roundtrip`, `git-roundtrip-for-ssis`, `ssisdb-deployment`, `adventureworks-mapping` |
 | `.github/prompts/` | 8 `/`-invokable workflows: scaffold, generate-{staging,dim-type1,dim-type2,fact}, deploy-and-execute, generate-{validation-sql,package-docs} |
 | `.github/instructions/` | Per-file-pattern guidance (`.dtsx`, `.gitattributes`, metadata JSON, T-SQL, SSISDB) |
 | `tools/New-SsisPackage.ps1` | Generate a `.dtsx` from metadata JSON |
+| `tools/New-SsisProject.ps1` | Generate `.dtproj`, connection managers, and `Project.params` |
 | `tools/Test-SsisPackage.ps1` | Validate via `dtexec /Validate /WarnAsError` |
 | `tools/Test-SsisDesignerLoad.ps1` | Round-trip via `Application.LoadPackage` |
+| `tools/lib/ToolkitConfig.psm1` | Reads `.ssis-toolkit.json` and resolves repo-relative paths |
 | `tools/lib/SsisOm.psm1` + `tools/lib/patterns/` | PowerShell dispatchers that pick a pattern module per metadata JSON |
 | `tools/lib/SsisOmHost/` | .NET 8 console host that wraps `Microsoft.SqlServer.Dts.Runtime` (`Program.cs`, `PackageBuilder.cs`, `MetadataHelpers.cs`, per-pattern builders under `Patterns/`). Built once via `Build-SsisOmHost.ps1` |
 | `.vscode/tasks.json` | Surfaces the primitives as `Ctrl+Shift+B` build tasks |
@@ -187,6 +195,7 @@ References: Microsoft Learn, [Fact tables in a dimensional model](https://learn.
 ## Read next
 
 - [GUIDE.md](GUIDE.md): hands-on walkthrough driven entirely from GitHub Copilot Chat. Generate, modify, validate, and document all four package patterns by typing prompts; no PowerShell required after the one-time prep.
+- [docs/bring-your-own-databases.md](docs/bring-your-own-databases.md): pointing the toolkit at your own source system and warehouse instead of the demo.
 - [AGENTS.md](AGENTS.md): repo-wide agent contract.
 - [install/overlay.manifest.psd1](install/overlay.manifest.psd1): single source of truth for the brownfield installer and template-cleanup workflow.
 

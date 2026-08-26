@@ -22,6 +22,13 @@
         @{ Path = '.gitignore';     Action = 'AppendBlock' }
         @{ Path = 'AGENTS.md';      Action = 'AppendBlock' }
 
+        # Repo-scoped toolkit configuration. The real .ssis-toolkit.json is written by
+        # /scaffold-new-ssis-project; the example documents the shape.
+        @{ Path = '.ssis-toolkit.example.json'; Action = 'CopyIfMissing' }
+
+        # How to point the toolkit at your own source system and warehouse.
+        @{ Path = 'docs/bring-your-own-databases.md'; Action = 'CopyIfMissing' }
+
         # GitHub Copilot customizations — work in both Visual Studio 2026 18.4+ and VS Code Copilot Chat
         @{ Path = '.github/copilot-instructions.md'; Action = 'Copy' }
         @{ Path = '.github/agents';                  Action = 'CopyDir' }
@@ -40,7 +47,7 @@
         @{ Path = 'tools/New-SsisProject.ps1';                       Action = 'Copy' }
         @{ Path = 'tools/Test-SsisPackage.ps1';                      Action = 'Copy' }
         @{ Path = 'tools/Test-SsisDesignerLoad.ps1';                 Action = 'Copy' }
-        @{ Path = 'tools/Remove-DemoAssets.ps1';                     Action = 'Copy' }
+        @{ Path = 'tools/lib/ToolkitConfig.psm1';                    Action = 'Copy' }
         @{ Path = 'tools/lib/SsisOm.psm1';                           Action = 'Copy' }
         @{ Path = 'tools/lib/patterns';                              Action = 'CopyDir' }
         @{ Path = 'tools/lib/SsisOmHost/Build-SsisOmHost.ps1';       Action = 'Copy' }
@@ -53,6 +60,14 @@
     Demo = @(
         # SQL Server + SSISDB provisioning for the AdventureWorks2025 walkthrough
         @{ Path = 'install/Install-Toolkit.ps1' }
+
+        # Tears down the demo databases and generated demo artifacts — destructive in
+        # any repo that is not the demo, so it must never reach a customer tree.
+        @{ Path = 'tools/Remove-DemoAssets.ps1' }
+
+        # This repo's own toolkit configuration, pinned to the demo layout.
+        # Customer repos get their own via /scaffold-new-ssis-project.
+        @{ Path = '.ssis-toolkit.json' }
 
         # AdventureWorks2025 demo content
         @{ Path = 'templates/sql' }
@@ -71,6 +86,11 @@
         # Greenfield first-push workflow — strips this Demo list, then deletes itself.
         # Must be in Demo (not Overlay) so the brownfield installer never copies it.
         @{ Path = '.github/workflows/template-cleanup.yml' }
+
+        # Toolkit-engineering guard. Reads this manifest, so it is meaningless once
+        # the manifest is gone.
+        @{ Path = '.github/workflows/overlay-portability-lint.yml' }
+        @{ Path = 'install/Test-OverlayPortability.ps1' }
     )
 
     # Files that must never ship in either mode. Listed here so a "release lint"
@@ -111,6 +131,7 @@
 This repo has the [SSIS Copilot Toolkit](https://github.com/<owner>/<repo>) overlay installed.
 
 - The custom agent **ssis-author** is the only sanctioned entry point for SSIS work.
+- Run `/scaffold-new-ssis-project` once to create `.ssis-toolkit.json` — it tells the toolkit where this repo keeps its SSIS project, metadata, and validation SQL, and which servers, databases, and warehouse schemas to use.
 - Hand-editing `.dtsx`, `.dtproj`, `.conmgr`, or `.params` is forbidden — packages regenerate from metadata JSON.
 - Every SSIS change must pass the [`ssis-delivery-gate`](.github/skills/ssis-delivery-gate/SKILL.md) skill (run by **ssis-validator**).
 - Detailed conventions live in [`.github/copilot-instructions.md`](.github/copilot-instructions.md).

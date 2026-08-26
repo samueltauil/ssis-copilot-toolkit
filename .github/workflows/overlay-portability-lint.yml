@@ -1,0 +1,27 @@
+name: Overlay portability lint
+
+# The overlay is what a customer's existing SSIS repo receives. It must contain
+# nothing that assumes the AdventureWorks2025 demo environment or this repo's
+# templates/ folder layout, or the "drop it into your own repo" story breaks.
+#
+# The scan logic lives in install/Test-OverlayPortability.ps1 so contributors can
+# run the same check locally before opening a PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan overlay files for demo-environment coupling
+        shell: pwsh
+        run: ./install/Test-OverlayPortability.ps1

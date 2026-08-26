@@ -73,25 +73,73 @@ namespace SsisOmHost
             var conns = GetDict(meta, "connections");
             if (conns != null && conns.ContainsKey(role))
             {
-                var c = (IDictionary<string, object>)conns[role];
-                return new ConnectionInfo
+                var c = conns[role] as IDictionary<string, object>;
+                if (c != null)
                 {
-                    Server   = GetString(c, "server",   required: true),
-                    Database = GetString(c, "database", required: true)
-                };
+                    return new ConnectionInfo
+                    {
+                        Server   = RequireConnectionValue(c, "server",   role),
+                        Database = RequireConnectionValue(c, "database", role)
+                    };
+                }
             }
-            // 2. inferred from source/target block
+            // 2. inferred from the source/target block
             var block = GetDict(meta, role);
             if (block != null)
             {
-                var defaultDb = role == "source" ? "AdventureWorks2025" : "CopilotSSIS_Warehouse";
                 return new ConnectionInfo
                 {
-                    Server   = GetString(block, "server",   defaultValue: @".\SQL2025"),
-                    Database = GetString(block, "database", defaultValue: defaultDb)
+                    Server   = RequireConnectionValue(block, "server",   role),
+                    Database = RequireConnectionValue(block, "database", role)
                 };
             }
-            throw new ArgumentException("Cannot resolve '" + role + "' connection. Provide connections." + role + ".{server,database} or " + role + ".{database}.");
+            throw new ArgumentException(
+                "metadata: cannot resolve the '" + role + "' connection. Add \"" + role +
+                "\": { \"server\": \"...\", \"database\": \"...\" } (or \"connections\"." + role +
+                ") to the metadata JSON.");
+        }
+
+        // No environment default is safe here: guessing a server or database silently
+        // produces a package pointed at something the author never named.
+        private static string RequireConnectionValue(IDictionary<string, object> d, string key, string role)
+        {
+            var value = GetString(d, key);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(
+                    "metadata: '" + role + "." + key + "' is required and has no default. " +
+                    "Set it in the metadata JSON to match your environment.");
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Warehouse schema name for a pattern role ("staging", "dimension", "fact").
+        /// Defaults to the Kimball-conventional stg/dim/fact, overridable per package
+        /// via a "schemas" block in the metadata JSON.
+        /// </summary>
+        public static string GetSchemaName(IDictionary<string, object> meta, string role, string defaultValue)
+        {
+            var schemas = GetDict(meta, "schemas");
+            if (schemas != null)
+            {
+                var configured = GetString(schemas, role);
+                if (!string.IsNullOrWhiteSpace(configured)) { return configured; }
+            }
+            return defaultValue;
+        }
+
+        public static void EnsureTargetSchema(string patternName, string role, string targetTable, string schemaName)
+        {
+            if (targetTable.StartsWith(schemaName + ".") ||
+                targetTable.StartsWith("[" + schemaName + "]."))
+            {
+                return;
+            }
+            throw new ArgumentException(
+                patternName + " metadata: targetTable '" + targetTable + "' must be in the '" +
+                schemaName + "' schema. Override the schema name with \"schemas\": { \"" + role +
+                "\": \"...\" } in the metadata JSON.");
         }
     }
 

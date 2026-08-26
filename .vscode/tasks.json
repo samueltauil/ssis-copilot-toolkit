@@ -124,7 +124,7 @@
       }
     },
     {
-      "label": "SSIS: Remove demo assets (cleanup)",
+      "label": "SSIS: Build managed-OM host (one-time)",
       "type": "shell",
       "command": "pwsh",
       "args": [
@@ -132,26 +132,7 @@
         "-ExecutionPolicy",
         "Bypass",
         "-File",
-        "${workspaceFolder}/tools/Remove-DemoAssets.ps1"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
-      "label": "SSIS: Install toolkit (one-time bootstrap)",
-      "type": "shell",
-      "command": "pwsh",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/install/Install-Toolkit.ps1"
+        "${workspaceFolder}/tools/lib/SsisOmHost/Build-SsisOmHost.ps1"
       ],
       "problemMatcher": []
     }
@@ -160,22 +141,22 @@
     {
       "id": "metadataPath",
       "type": "promptString",
-      "description": "Path to metadata JSON (e.g. templates/metadata/Stg_Customer.metadata.json)"
+      "description": "Path to metadata JSON (e.g. etl/metadata/Stg_Account.metadata.json)"
     },
     {
       "id": "packagePath",
       "type": "promptString",
-      "description": "Path to .dtsx (e.g. templates/ssis-project/Packages/Stg_Customer.dtsx)"
+      "description": "Path to .dtsx (e.g. src/MyWarehouse/Stg_Account.dtsx)"
     },
     {
       "id": "projectPath",
       "type": "promptString",
-      "description": "Path to .dtproj (e.g. templates/ssis-project/SsisDemo.dtproj)"
+      "description": "Path to .dtproj (e.g. src/MyWarehouse/MyWarehouse.dtproj)"
     },
     {
       "id": "ispacPath",
       "type": "promptString",
-      "description": "Path to built .ispac (e.g. templates/ssis-project/bin/Development/SsisDemo.ispac)"
+      "description": "Path to built .ispac (e.g. src/MyWarehouse/bin/Development/MyWarehouse.ispac)"
     },
     {
       "id": "projectName",

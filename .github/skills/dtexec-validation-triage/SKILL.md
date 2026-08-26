@@ -35,8 +35,8 @@ The connection manager can't reach SQL Server.
 
 The SQL query in the OLE DB Source references a column the source table doesn't have.
 
-- **Fix in metadata JSON.** Check the `source.columns` block. Cross-reference against the [`adventureworks-mapping`](../adventureworks-mapping/SKILL.md) skill — never invent column names.
-- **If the column is correct but missing on the live DB**, use `mssql_run_query` to confirm against `.\SQL2025`.
+- **Fix in metadata JSON.** Check the `source.columns` block. Cross-reference against the live database via `INFORMATION_SCHEMA.COLUMNS` (or the [`adventureworks-mapping`](../adventureworks-mapping/SKILL.md) skill when the source is AdventureWorks2025) — never invent column names.
+- **If the column is correct but missing on the live DB**, use `mssql_run_query` to confirm against the server named in `.ssis-toolkit.json`.
 
 ### `DTS_E_OLEDBDESTINATIONADAPTERSTATIC_INVALIDDATA` / lineage-ID mismatch
 
@@ -53,7 +53,7 @@ Source column is `VARCHAR`, destination is `NVARCHAR` (or vice-versa). The patte
 
 ### `Error: Validation timed out`
 
-Network reachability from the agent host to `.\SQL2025`. Not a code fix.
+Network reachability from the agent host to the SQL Server named in `.ssis-toolkit.json`. Not a code fix.
 
 - **Confirm with `mssql_connect`.** If the MCP can reach the server, the SSIS package's connection string is wrong. If it can't, the environment is broken.
 
@@ -71,6 +71,6 @@ Cite the URL of the result in your diagnosis line.
 
 The **ssis-validator** verdict expects **one line**, like:
 
-> `diagnosis: DTS_E_OLEDBSRCADAPTERSTATIC_NOCOLUMNS — source.columns[3] ('AccountNum') does not exist on AdventureWorks2025.Sales.Customer; cf. adventureworks-mapping skill.`
+> `diagnosis: DTS_E_OLEDBSRCADAPTERSTATIC_NOCOLUMNS — source.columns[3] ('AccountNum') does not exist on <sourceDatabase>.dbo.Account; confirmed via INFORMATION_SCHEMA.COLUMNS.`
 
 Not a paragraph. Not a fix proposal. The author agent does the fix.

@@ -1,23 +1,25 @@
 ---
 description: "Use when writing or editing SQL Server T-SQL files — DDL, demo data, validation queries, SSISDB stored-procedure callers. Covers naming, schema layout, and SSIS-friendly conventions."
-applyTo: "**/*.sql, templates/sql/**"
+applyTo: "**/*.sql"
 ---
 # SQL conventions
 
 ## Schemas
 
+These are the default warehouse schema names. A repo can rename them in `.ssis-toolkit.json` under `schemas`; the four pattern builders check `targetTable` against whatever is configured.
+
 | Schema | Purpose |
 |---|---|
 | `stg` | Staging tables — landing zone for source rows; truncated per load. |
 | `dim` | Dimension tables — Type 1 or Type 2. SCD-2 dims include `IsCurrent`, `EffectiveFrom`, `EffectiveTo`. |
-| `fact` | Fact tables — surrogate-key-joined to `dim.*`. |
-| `etl` | ETL audit / metadata — `etl.PackageRun`, `etl.RowAudit`, parameter overrides. |
+| `fact` | Fact tables — surrogate-key-joined to the dimension schema. |
+| `etl` | ETL audit / metadata — e.g. `etl.PackageRun`. Optional; staging packages only write to it when the metadata sets `auditTable`. |
 
 ## Naming
 
 - **Tables**: `PascalCase`, singular (`dim.Customer`, not `dim.Customers`).
 - **Surrogate keys**: `<Table>SK` (`CustomerSK`).
-- **Business keys**: `<Table>BK` or the source's natural column name. Pin source columns via the `adventureworks-mapping` skill — do not invent column names.
+- **Business keys**: `<Table>BK` or the source's natural column name. Resolve source columns against `INFORMATION_SCHEMA.COLUMNS` (or the `adventureworks-mapping` skill when the source is AdventureWorks2025) — do not invent column names.
 - **Audit columns** (on every dim/fact): `LoadedAt datetime2(3) NOT NULL`, `LoadedByPackageRunId int NOT NULL`.
 
 ## DDL style

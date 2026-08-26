@@ -1,0 +1,28 @@
+{
+  "_comment": "Copy to .ssis-toolkit.json and edit, or run /scaffold-new-ssis-project and let the agent write it for you. Paths are repo-relative, forward-slash.",
+
+  "projectPath": "src/MyWarehouse",
+  "projectName": "MyWarehouse",
+  "metadataPath": "etl/metadata",
+  "validationSqlPath": "etl/validation",
+  "docsPath": "etl/docs",
+
+  "connections": {
+    "source": {
+      "name": "SourceSystem",
+      "server": "SQLSERVER01",
+      "database": "SourceDatabase"
+    },
+    "target": {
+      "name": "Warehouse",
+      "server": "SQLSERVER02",
+      "database": "WarehouseDatabase"
+    }
+  },
+
+  "schemas": {
+    "staging": "stg",
+    "dimension": "dim",
+    "fact": "fact"
+  }
+}
