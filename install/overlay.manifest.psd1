@@ -157,6 +157,9 @@ tools/lib/SsisOmHost/obj/
 **/obj/
 *.ispac
 
+# Visual Studio BI designer scratch state, recreated on every project open
+*.database
+
 # SSISDB execution logs
 **/SSIS.Replay/
 **/*.dtsx.log

@@ -91,7 +91,7 @@ Select **ssis-author** from the agent picker, then type each of these:
 
 ```text
 /generate-fact-package
-> Build fact.SalesOrder from stg.SalesOrderHeader. Look up CustomerKey from dim.Customer on CustomerID and DateKey from dim.Date on OrderDate.
+> Build fact.SalesOrder from stg.SalesOrderHeader. Look up CustomerKey from dim.Customer on CustomerID.
 ```
 
 **Package dependency note:** The fact.SalesOrder package reads from `stg.SalesOrderHeader`, which is populated by the Stg_SalesOrderHeader staging package above. Execute packages in this order: Stg_Customer → Stg_SalesOrderHeader → Dim_Customer_Type1 → Fact_SalesOrder.
