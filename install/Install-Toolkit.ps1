@@ -40,7 +40,12 @@ function Write-Skip([string]$Message) { Write-Host "[Install] $Message" -Foregro
 
 Write-Step 'Checking SqlServer PowerShell module...'
 if (-not (Get-Module -ListAvailable -Name SqlServer)) {
-    throw 'SqlServer PowerShell module not installed. Run: Install-Module SqlServer -Scope CurrentUser'
+    throw @"
+SqlServer PowerShell module is not available to this host (PowerShell $($PSVersionTable.PSVersion)).
+Fix:  Install-Module SqlServer -Scope CurrentUser -Force
+Note: Windows PowerShell 5.1 and PowerShell 7 use separate module paths - install it in the host you run this script from.
+Run   .\install\Test-Prerequisites.ps1 -Install   to check and install every prerequisite at once.
+"@
 }
 Import-Module SqlServer
 

@@ -8,25 +8,80 @@ The custom agent **ssis-author** writes structured metadata JSON, then calls a t
 
 SSIS authoring and execution are Windows-only: the managed object model, `dtexec`, and `dtutil` ship with the SQL Server client tools and have no Linux equivalent.
 
+### Check everything in one command
+
+The checker lives inside the repo, so you need the repo first. Two ways:
+
+**If you already have Git:**
+
+```powershell
+git clone https://github.com/samueltauil/ssis-copilot-toolkit.git
+cd ssis-copilot-toolkit
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\Test-Prerequisites.ps1
+```
+
+**If `git` is not recognized**, install it first (winget ships with Windows 10 1809+ and Windows 11), then open a **new** terminal:
+
+```powershell
+winget install --id Git.Git --exact --source winget
+```
+
+No winget and no Git? Download the repo as a ZIP instead — green **Code** button on [the GitHub page](https://github.com/samueltauil/ssis-copilot-toolkit) → **Download ZIP** → right-click the file → **Properties** → tick **Unblock** → extract. Everything except the clean-clone round-trip gate works without Git.
+
+It reports every requirement as `[ OK ]`, `[WARN]`, `[SKIP]`, or `[FAIL]` with the exact remediation command, and exits non-zero while anything required is missing. It runs on stock Windows PowerShell 5.1, so you can run it before installing anything else. Add `-Install` to have it install Git, PowerShell 7, and the `SqlServer` module for you (via winget and the PowerShell Gallery) and then re-run every check:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\Test-Prerequisites.ps1 -Install
+```
+
+It never installs SQL Server, restores a database, or creates SSISDB — those stay manual on purpose.
+
+| Switch | Effect |
+|---|---|
+| `-Install` | Install Git, PowerShell 7, and the `SqlServer` module, then re-verify |
+| `-SkipDemo` | Skip all SQL Server checks (toolchain only) |
+| `-SkipBuild` | Skip the managed-OM host compile — faster, but no longer proves the SSIS assemblies are usable |
+| `-Server <instance>` | Test a different instance than the one in `.ssis-toolkit.json` |
+| `-PassThru` | Also emit one result object per check for scripting |
+
+In VS Code you can run it from **Terminal → Run Task → SSIS: Check prerequisites**.
+
+> **All toolkit commands are relative to the repository root.** `.\tools\...` and `.\install\...` only resolve after `cd ssis-copilot-toolkit`. Running them from `C:\` or `D:\` produces `The term '.\tools\...' is not recognized`.
+
 ### Required for every scenario
 
-| Requirement | Why | How to check |
+Every row is checked by `Test-Prerequisites.ps1`. Install commands assume winget; the download link is the manual alternative.
+
+| Requirement | Why | How to install |
 |---|---|---|
-| **Windows** | The SSIS managed OM and `dtexec` are Windows-only | — |
-| **PowerShell 7+** (`pwsh`) | Runs the toolkit primitives. Windows PowerShell 5.1 also works | `pwsh -v` |
-| **.NET Framework 4.x** | `Build-SsisOmHost.ps1` compiles the managed-OM host with `csc.exe`. **No .NET SDK needed** — `csc.exe` ships with Windows | `Test-Path C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe` |
-| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` (GAC, `v4.0_17.0.0.0`) and `dtexec.exe`. The build script binds to these exact assembly versions | `Test-Path 'C:\Program Files\Microsoft SQL Server\170\DTS\Binn\dtexec.exe'` |
-| **GitHub Copilot Chat** | Drives the agents and prompts | Visual Studio 2026 (18.4+) or VS Code (Stable or Insiders) |
+| **Windows** (64-bit) | The SSIS managed OM and `dtexec` are Windows-only | — |
+| **Git for Windows** | Clones the repo; the clean-clone round-trip gate shells out to `git` | `winget install --id Git.Git --exact` · [download](https://git-scm.com/download/win) |
+| **PowerShell 5.1+** | Runs the toolkit primitives. Ships with Windows; **PowerShell 7 is recommended** because the VS Code tasks invoke `pwsh` | `winget install --id Microsoft.PowerShell --exact` · [download](https://github.com/PowerShell/PowerShell/releases/latest) |
+| **.NET Framework 4.6.2+** | `Build-SsisOmHost.ps1` compiles the managed-OM host with `csc.exe`. **No .NET SDK needed** — `csc.exe` ships with Windows | Already present on Windows 10 1903+ and Windows 11 |
+| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` (GAC, `v4.0_17.0.0.0`) and `dtexec.exe`. The build script binds to these exact assembly versions | [SQL Server 2025 Developer edition](https://www.microsoft.com/sql-server/sql-server-downloads) → **Shared Features** → tick **Integration Services** |
+| **GitHub Copilot Chat** | Drives the agents and prompts | See [Set up GitHub Copilot Chat](#set-up-github-copilot-chat) below |
 
-> Installing only the SQL Server *database engine* is not enough — select **Integration Services** in the SQL Server installer, and install **SQL Server Data Tools / the SSIS projects extension** in Visual Studio if you want the designer.
+> Installing only the SQL Server *database engine* is not enough — select **Integration Services** in the SQL Server installer, and install **SQL Server Data Tools / the SSIS projects extension** in Visual Studio if you want the designer. SQL Server 2022 (`v4.0_16.0.0.0`) does **not** satisfy the assembly requirement.
 
-Verify the toolchain before anything else:
+### Set up GitHub Copilot Chat
+
+New to Copilot? Three things have to be true before the agents in this repo appear:
+
+1. **A GitHub account with a Copilot subscription** (Free, Pro, Business, or Enterprise). Check at [github.com/settings/copilot](https://github.com/settings/copilot). Business and Enterprise seats are assigned by an admin.
+2. **An IDE with the extension.** Either:
+   - **VS Code** — [download](https://code.visualstudio.com/download), then install the [GitHub Copilot Chat extension](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat), or run `winget install --id Microsoft.VisualStudioCode --exact`.
+   - **Visual Studio 2026 (18.4+)** — Copilot Chat is built in, and it also gives you the native SSIS designer.
+3. **Signed in.** In VS Code, click the account icon at the bottom-left → **Sign in with GitHub**. The Copilot icon in the title bar should stop showing a warning.
+
+Then open this repo's folder in the IDE. The **ssis-author** and **ssis-validator** agents come from [.github/agents/](.github/agents/) and appear in the Chat agent picker automatically — there is nothing extra to install. `Test-Prerequisites.ps1` reports whether the extension is present, but it cannot verify your subscription or sign-in state.
+
+After the checker reports `PASS`, build the managed-OM host once per machine:
 
 ```powershell
 .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
 ```
 
-Success prints `OK: ...\SsisOmHost.exe`. This is a one-time step per machine. If it fails, the error names the missing assembly or compiler.
+Success prints `OK: ...\SsisOmHost.exe`. (The checker already does this unless you passed `-SkipBuild`.)
 
 ### Additionally required to run the demo
 
@@ -35,7 +90,7 @@ The AdventureWorks2025 walkthrough needs a live SQL Server; the greenfield and b
 | Requirement | Notes |
 |---|---|
 | **A SQL Server instance** | The demo config assumes `.\SQL2025`. Different instance? Edit `.ssis-toolkit.json` and the `source` / `target` blocks in `templates/metadata/*.json`. |
-| **`SqlServer` PowerShell module** | `Install-Module SqlServer -Scope CurrentUser` — used by `Install-Toolkit.ps1`. |
+| **`SqlServer` PowerShell module** | `Install-Module SqlServer -Scope CurrentUser -Force` — used by `Install-Toolkit.ps1`. Windows PowerShell 5.1 and PowerShell 7 have separate module paths: install it in the host you run the scripts from. |
 | **AdventureWorks2025** restored on that instance | [Download and restore instructions](https://learn.microsoft.com/sql/samples/adventureworks-install-configure). `Install-Toolkit.ps1` verifies it but does not restore it. |
 | **SSISDB catalog** (deployment only) | Create via SSMS → **Integration Services Catalogs** → **Create Catalog**. Only needed if you deploy; the demo's validation gate does not require it. |
 
@@ -57,6 +112,9 @@ cd ssis-copilot-toolkit
 ```
 
 ```powershell
+# 0. Verify (and optionally install) prerequisites - run this first
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\Test-Prerequisites.ps1
+
 # 1. Build the managed-OM host (one-time per machine)
 .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
 
@@ -199,6 +257,7 @@ You normally never call these yourself; the **ssis-author** agent does. They are
 
 | Primitive | Purpose |
 |---|---|
+| `install/Test-Prerequisites.ps1 [-Install]` | Verify (and optionally install) every machine prerequisite. Run this before anything else. |
 | `tools/lib/SsisOmHost/Build-SsisOmHost.ps1` | Compile the managed-OM host with `csc.exe`. Run once per machine. |
 | `tools/New-SsisPackage.ps1 -Metadata <file.json>` | Generate a `.dtsx` from metadata JSON. |
 | `tools/Test-SsisPackage.ps1 -Package <file.dtsx>` | Validate via `dtexec /Validate /WarnAsError`. |
@@ -219,6 +278,7 @@ You do not invoke skills directly; Copilot loads them based on the active file o
 | `.github/skills/` | 8 skills: `ssis-delivery-gate`, `ssis-package-patterns`, `dtexec-validation-triage`, `dtsx-xml-anatomy`, `ssis-clone-roundtrip`, `git-roundtrip-for-ssis`, `ssisdb-deployment`, `adventureworks-mapping` |
 | `.github/prompts/` | 8 `/`-invokable workflows: scaffold, generate-{staging,dim-type1,dim-type2,fact}, deploy-and-execute, generate-{validation-sql,package-docs} |
 | `.github/instructions/` | Per-file-pattern guidance (`.dtsx`, `.gitattributes`, metadata JSON, T-SQL, SSISDB) |
+| `install/Test-Prerequisites.ps1` | Verify and optionally install every machine prerequisite; runs on Windows PowerShell 5.1 |
 | `tools/New-SsisPackage.ps1` | Generate a `.dtsx` from metadata JSON |
 | `tools/New-SsisProject.ps1` | Generate `.dtproj`, connection managers, and `Project.params` |
 | `tools/Test-SsisPackage.ps1` | Validate via `dtexec /Validate /WarnAsError` |

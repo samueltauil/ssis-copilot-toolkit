@@ -45,6 +45,7 @@ This repo's own copy points at the demo layout and is in the manifest's `Demo` l
 
 | Goal | Primitive |
 |---|---|
+| Verify (and optionally install) machine prerequisites | `.\install\Test-Prerequisites.ps1 [-Install]` |
 | Build the managed-OM host (one-time) | `.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1` |
 | Generate a package from metadata JSON | `.\tools\New-SsisPackage.ps1 -Metadata <file.json>` |
 | Validate (`dtexec /Validate /WarnAsError`) | `.\tools\Test-SsisPackage.ps1 -Package <file.dtsx>` |

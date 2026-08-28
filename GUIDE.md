@@ -6,30 +6,40 @@ If you only want to read the architecture, start at [AGENTS.md](AGENTS.md).
 
 ## Prerequisites
 
-This guide runs the **demo** against AdventureWorks2025. Full details and verification commands are in the [README Prerequisites section](README.md#prerequisites); the short version:
+This guide runs the **demo** against AdventureWorks2025. Full details are in the [README Prerequisites section](README.md#prerequisites); the short version:
 
 **Toolchain (needed for any scenario)**
 
-- **Windows** with **PowerShell 7+** (Windows PowerShell 5.1 also works).
-- **.NET Framework 4.x** — its `csc.exe` compiles the managed-OM host. No .NET SDK required.
-- **SQL Server 2025 Integration Services (shared components)** — provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough; select **Integration Services** in the installer.
-- **GitHub Copilot Chat** in Visual Studio 2026 (18.4+) or VS Code (Stable or Insiders).
+- **Windows** (64-bit) with **PowerShell 5.1** (ships with Windows). **PowerShell 7** is recommended — the VS Code tasks call `pwsh`. [Install](https://github.com/PowerShell/PowerShell/releases/latest)
+- **Git for Windows** — to clone the repo. [Install](https://git-scm.com/download/win)
+- **.NET Framework 4.6.2+** — its `csc.exe` compiles the managed-OM host. No .NET SDK required. Already on Windows 10 1903+ and Windows 11.
+- **SQL Server 2025 Integration Services (shared components)** — provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough; tick **Integration Services** under **Shared Features** in the installer. SQL Server 2022 does not satisfy this. [Download Developer edition](https://www.microsoft.com/sql-server/sql-server-downloads)
+- **GitHub Copilot Chat** in Visual Studio 2026 (18.4+) or VS Code. Needs a GitHub account with a Copilot subscription — see [README → Set up GitHub Copilot Chat](README.md#set-up-github-copilot-chat).
 
 **Demo-only, on top of the above**
 
 - A **SQL Server instance**. This repo's `.ssis-toolkit.json` assumes `.\SQL2025` — using something else? Edit that file and the `source` / `target` blocks in `templates/metadata/*.json`, or just tell the agent in chat and it will adjust them.
-- The **`SqlServer` PowerShell module**: `Install-Module SqlServer -Scope CurrentUser`.
+- The **`SqlServer` PowerShell module**: `Install-Module SqlServer -Scope CurrentUser -Force`.
 - **AdventureWorks2025** restored on that instance ([download and restore instructions](https://learn.microsoft.com/sql/samples/adventureworks-install-configure)). The installer verifies it is present but will not restore it for you.
 - **SSISDB** only if you intend to deploy. Create it via SSMS → **Integration Services Catalogs** → **Create Catalog**. The validation gate in this guide does not need it.
 
-Clone the repo and open the folder in your IDE:
+Clone the repo, **change into the folder**, and let the toolkit tell you what is missing:
 
 ```powershell
 git clone https://github.com/samueltauil/ssis-copilot-toolkit.git
 cd ssis-copilot-toolkit
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\Test-Prerequisites.ps1
 ```
 
-Open the Copilot Chat panel. You are ready.
+If `git` is not recognized, install it first and open a **new** terminal — `winget install --id Git.Git --exact --source winget` — or download the repo as a ZIP from the green **Code** button on [GitHub](https://github.com/samueltauil/ssis-copilot-toolkit).
+
+Every command in this guide is relative to the repository root, so the `cd` is not optional: run `.\tools\...` from anywhere else and PowerShell answers `The term '.\tools\...' is not recognized`.
+
+The checker prints `[ OK ]` / `[WARN]` / `[FAIL]` per requirement with the exact fix command, and exits non-zero while anything required is missing. Add `-Install` and it will install PowerShell 7 and the `SqlServer` module for you, then re-verify. **Do not continue until it reports `RESULT: PASS`.**
+
+Never used GitHub Copilot before? You need a GitHub account with a Copilot subscription, an IDE (VS Code or Visual Studio 2026), the Copilot Chat extension, and to be signed in. Step-by-step: [README → Set up GitHub Copilot Chat](README.md#set-up-github-copilot-chat).
+
+Now open the folder in your IDE and open the Copilot Chat panel. You are ready.
 
 > Not running the demo? Starting a new repo or adding the toolkit to an existing one are covered in the README's [Greenfield](README.md#greenfield-new-repo-from-the-template) and [Brownfield](README.md#brownfield-existing-ssis-repo) sections, then [Bring your own databases](docs/bring-your-own-databases.md).
 
@@ -41,9 +51,11 @@ Two things have to happen once per machine before the agent can author packages:
 
 In Copilot Chat, ask:
 
-> Run `.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1` to build the managed-OM host, then run `.\install\Install-Toolkit.ps1` to provision the demo databases.
+> Run `.\install\Test-Prerequisites.ps1` to confirm the machine is ready, then `.\tools\lib\SsisOmHost\Build-SsisOmHost.ps1` to build the managed-OM host, then `.\install\Install-Toolkit.ps1` to provision the demo databases.
 
-Copilot will surface both commands for your approval, run them in the integrated terminal, and report back. You should see `OK: ...\SsisOmHost.exe` and the databases `CopilotSSIS_Source` and `CopilotSSIS_Warehouse` created with the `stg` / `dim` / `fact` / `etl` schemas applied.
+Copilot will surface each command for your approval, run it in the integrated terminal, and report back. You should see `RESULT: PASS` from the checker, `OK: ...\SsisOmHost.exe` from the build, and the databases `CopilotSSIS_Source` and `CopilotSSIS_Warehouse` created with the `stg` / `dim` / `fact` / `etl` schemas applied.
+
+> If a command fails with *"is not recognized as the name of a cmdlet"*, the terminal is not in the repository root. Run `cd ssis-copilot-toolkit` (or the full path to your clone) and retry.
 
 (Prefer to run them yourself? Both are documented in the [README primitives table](README.md#powershell-primitives-callable-directly-or-via-ctrlshiftb).)
 

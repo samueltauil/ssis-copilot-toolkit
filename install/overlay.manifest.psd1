@@ -29,6 +29,10 @@
         # How to point the toolkit at your own source system and warehouse.
         @{ Path = 'docs/bring-your-own-databases.md'; Action = 'CopyIfMissing' }
 
+        # Prerequisite validator/installer. Runs on Windows PowerShell 5.1 so it works
+        # on a machine that has nothing else installed yet.
+        @{ Path = 'install/Test-Prerequisites.ps1'; Action = 'Copy' }
+
         # GitHub Copilot customizations — work in both Visual Studio 2026 18.4+ and VS Code Copilot Chat
         @{ Path = '.github/copilot-instructions.md'; Action = 'Copy' }
         @{ Path = '.github/agents';                  Action = 'CopyDir' }

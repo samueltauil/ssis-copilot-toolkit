@@ -103,6 +103,44 @@ if ($parseErrors -and $parseErrors.Count -gt 0) {
 }
 Add-Pass 'Installer parses cleanly.'
 
+# The prerequisite checker has the same constraint for a different reason: it is
+# the first thing a user runs, usually under Windows PowerShell 5.1, which
+# decodes a BOM-less file as ANSI. A UTF-8 em dash then becomes a cp1252 smart
+# quote, which PowerShell treats as a string delimiter, and the file stops
+# parsing. Guard it here so the failure cannot come back.
+$prereq = Join-Path $RepoRoot 'install/Test-Prerequisites.ps1'
+if (-not (Test-Path -LiteralPath $prereq)) {
+    Add-Failure "Prerequisite checker not found: $prereq"
+}
+else {
+    $prereqNonAscii = @()
+    $prereqLines = [System.IO.File]::ReadAllText($prereq) -split "`r?`n"
+    for ($i = 0; $i -lt $prereqLines.Count; $i++) {
+        foreach ($ch in $prereqLines[$i].ToCharArray()) {
+            if ([int]$ch -gt 127) {
+                $prereqNonAscii += "line $($i + 1): U+{0:X4} '{1}'" -f [int]$ch, $ch
+                break
+            }
+        }
+    }
+    if ($prereqNonAscii.Count -gt 0) {
+        Add-Failure "Test-Prerequisites.ps1 must be pure ASCII (found $($prereqNonAscii.Count) line(s), e.g. $($prereqNonAscii[0]))."
+    }
+    else {
+        Add-Pass 'Test-Prerequisites.ps1 is pure ASCII.'
+    }
+
+    $prereqErrors = $null
+    $prereqTokens = $null
+    [System.Management.Automation.Language.Parser]::ParseFile($prereq, [ref]$prereqTokens, [ref]$prereqErrors) | Out-Null
+    if ($prereqErrors -and $prereqErrors.Count -gt 0) {
+        Add-Failure "Test-Prerequisites.ps1 does not parse: $($prereqErrors[0].Message)"
+    }
+    else {
+        Add-Pass 'Test-Prerequisites.ps1 parses cleanly.'
+    }
+}
+
 # 3. No bare platform automatic variables.
 $platformNames = @('IsWindows', 'IsLinux', 'IsMacOS', 'IsCoreCLR')
 $platformHits = @($ast.FindAll({

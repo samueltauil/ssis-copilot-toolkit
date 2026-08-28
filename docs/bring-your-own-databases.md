@@ -10,19 +10,28 @@ Before the first `/generate-*-package` prompt:
 
 | Requirement | Notes |
 |---|---|
-| **Windows** + **PowerShell 7+** | Windows PowerShell 5.1 also works. |
-| **.NET Framework 4.x** | Its `csc.exe` compiles the managed-OM host. No .NET SDK required. |
-| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough — select Integration Services in the installer. |
+| **Windows** (64-bit) + **PowerShell 5.1** | Ships with Windows. PowerShell 7 is recommended - the VS Code tasks call `pwsh`. |
+| **Git for Windows** | Clones the repo and backs the clean-clone round-trip gate. |
+| **.NET Framework 4.6.2+** | Its `csc.exe` compiles the managed-OM host. No .NET SDK required. |
+| **SQL Server 2025 Integration Services (shared components)** | Provides `Microsoft.SqlServer.ManagedDTS.dll` and `dtexec.exe`. The database engine alone is not enough - select Integration Services in the installer. |
 | **GitHub Copilot Chat** | Visual Studio 2026 (18.4+) or VS Code. |
 | **Network access** to your source and warehouse servers | The agent queries `INFORMATION_SCHEMA.COLUMNS` to resolve column names, and `dtexec /Validate` connects to both sides. |
 
-Compile the host once per machine:
+Check all of the above in one pass, from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\Test-Prerequisites.ps1
+```
+
+Add `-Install` to have it install Git, PowerShell 7, and the `SqlServer` module for you. Use `-SkipDemo` if you have not configured `.ssis-toolkit.json` yet and only want the toolchain checked. It exits non-zero until every required item passes.
+
+Then compile the host once per machine (the checker already does this unless you pass `-SkipBuild`):
 
 ```powershell
 .\tools\lib\SsisOmHost\Build-SsisOmHost.ps1
 ```
 
-You do **not** need AdventureWorks, the `SqlServer` PowerShell module, or `Install-Toolkit.ps1` — those are demo-only.
+You do **not** need AdventureWorks, the `SqlServer` PowerShell module, or a demo provisioning script - those are demo-only.
 
 ## 1. Configure the repo
 

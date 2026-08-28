@@ -16,6 +16,8 @@ Anything that orchestrates multiple primitives (validate → designer-load → b
 
 Every path and connection these scripts use comes from `.ssis-toolkit.json` at the repo root. None of them hard-code a folder, server, or database.
 
+Before any of them will run, the machine needs the toolchain they depend on. [`install/Test-Prerequisites.ps1`](../install/Test-Prerequisites.ps1) checks all of it in one pass (`-Install` installs what it can) and exits non-zero until the machine is ready.
+
 ## Roadmap primitives
 
 Referenced by the **ssis-author** agent's `deploy-and-execute` prompt and by Steps 3 and 4 of the delivery gate. Not yet on disk; that prompt refuses on invocation, and the delivery gate reports SKIPPED for the matching steps.
