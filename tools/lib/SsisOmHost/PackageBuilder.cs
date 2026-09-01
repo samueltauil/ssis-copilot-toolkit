@@ -252,7 +252,7 @@ namespace SsisOmHost
             string fromOutputName = null)
         {
             var comp = df.MainPipe.ComponentMetaDataCollection.New();
-            comp.ComponentClassID = "DTSTransform.Lookup";
+            comp.ComponentClassID = "Microsoft.Lookup";
             var inst = comp.Instantiate();
             inst.ProvideComponentProperties();
             comp.Name = name;
